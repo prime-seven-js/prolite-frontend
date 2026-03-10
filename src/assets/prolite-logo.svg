@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#050e1f"/>
+      <stop offset="100%" style="stop-color:#0b1e38"/>
+    </linearGradient>
+
+    <linearGradient id="pGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f6ff"/>
+      <stop offset="60%" style="stop-color:#8dd8f8"/>
+      <stop offset="100%" style="stop-color:#2496d4"/>
+    </linearGradient>
+
+    <linearGradient id="rayGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#63d4f7;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#63d4f7;stop-opacity:0"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background: solid square (no rounded corners — max favicon compatibility) -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+  <!-- P stem — centered horizontally in 512 grid -->
+  <!-- P spans roughly x:148–400, y:136–376 (224px tall, 252px wide total) -->
+  <rect x="148" y="136" width="46" height="240" rx="8" fill="url(#pGrad)" filter="url(#softGlow)"/>
+
+  <!-- P bowl -->
+  <path d="M 194 136 L 278 136 A 84 84 0 0 1 278 304 L 194 304"
+    fill="none" stroke="url(#pGrad)" stroke-width="46" stroke-linecap="round" filter="url(#softGlow)"/>
+
+  <!-- Light rays from bowl tip -->
+  <path d="M 314 220 L 396 200" stroke="url(#rayGrad)" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M 314 220 L 404 220" stroke="url(#rayGrad)" stroke-width="3.5" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 314 220 L 396 240" stroke="url(#rayGrad)" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- Glowing dot -->
+  <circle cx="316" cy="220" r="13" fill="#d6f4ff" filter="url(#dotGlow)"/>
+  <circle cx="316" cy="220" r="6" fill="#ffffff"/>
+</svg>

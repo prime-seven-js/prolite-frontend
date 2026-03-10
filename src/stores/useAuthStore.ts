@@ -1,0 +1,68 @@
+import { authService } from "@/services/authService";
+import type { AuthState } from "@/types/store";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      token: null,
+      user: null,
+      loading: false,
+
+      clearState: () => {
+        set({ token: null, user: null, loading: false });
+      },
+
+      signUp: async (email, username, password) => {
+        try {
+          set({ loading: true });
+          await authService.signUp(email, username, password);
+          console.log("Registered successfully !");
+        } catch (err) {
+          console.log("Failed to register: ", err);
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      signIn: async (email, password) => {
+        try {
+          set({ loading: true });
+          const { token, user } = await authService.signIn(email, password);
+
+          console.log("Login successfully !");
+          set({ token });
+
+          await get().fetchUserData(user.userId);
+        } catch (err) {
+          console.log("Failed to login", err);
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      signOut: async () => {
+        get().clearState();
+      },
+
+      fetchUserData: async (user_id) => {
+        try {
+          set({ loading: true });
+          const user = await authService.fetchUserData(user_id);
+          set({ user });
+        } catch (err) {
+          console.log("Failed to fetch user data", err);
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+    }),
+    {
+      name: "auth-storage",
+    },
+  ),
+);

@@ -28,7 +28,7 @@ export function SigninForm({
         resolver: zodResolver(signinSchema),
     })
 
-    const { signIn, token } = useAuthStore();
+    const { signIn } = useAuthStore();
     const navigate = useNavigate();
 
     const onSubmit = async (data: SigninFormValues) => {
@@ -47,7 +47,7 @@ export function SigninForm({
     }
 
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex w-full flex-col gap-5 sm:gap-6", className)} {...props}>
             <Card className="overflow-hidden p-0">
                 <CardContent className="grid p-0 md:grid-cols-2">
                     <div className="relative hidden bg-muted md:block">
@@ -94,7 +94,7 @@ export function SigninForm({
                     </form>
                 </CardContent>
             </Card>
-            <div className="text-xs text-muted-foregroundtext-xs text-balance px-6 text-center *:[a]:hover:text-primary text-muted-foreground *:[a]:underline *:[a]:underline-offetset-4">
+            <div className="px-4 text-center text-xs text-balance text-muted-foreground sm:px-6 *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary">
                 By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
                 and <a href="#">Privacy Policy</a>.
             </div>

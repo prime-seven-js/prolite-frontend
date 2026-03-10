@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { Navigate, Outlet } from 'react-router';
 
 const AuthRoute = () => {
-  const { token, user, loading } = useAuthStore();
+  const { token } = useAuthStore();
 
   if (!token) {
     return (

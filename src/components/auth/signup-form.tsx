@@ -61,7 +61,7 @@ export function SignupForm({
             <div className="flex flex-col gap-6">
               {/* Header - Logo */}
               <div className="flex flex-col gap-2 justify-center text-center">
-                <img src="/src/assets/prolite-logo.svg" alt="Prolite Logo" className="mx-auto w-12 h-auto" />
+                <img src="/prolite-logo.svg" alt="Prolite Logo" className="mx-auto w-12 h-auto" />
                 <h1 className="text-2xl font-bold">Create your account</h1>
                 <p className="text-muted-foreground text-balance">Enter your email below to create your account</p>
               </div>
@@ -108,7 +108,7 @@ export function SignupForm({
           {/* Image */}
           <div className="relative hidden bg-muted md:block">
             <img
-              src="/src/assets/signup-image.jpg"
+              src="/signup-image.jpg"
               alt="Image"
               className="absolute inset-0 h-full w-full object-cover brightness-[0.75]"
             />

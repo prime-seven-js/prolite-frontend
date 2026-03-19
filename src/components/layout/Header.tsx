@@ -22,7 +22,7 @@ export function Header({ username }: HeaderProps) {
         {/* Logo & Brand Name */}
         <div className="flex items-center gap-2.5">
           <img
-            src="/src/assets/prolite-logo.svg"
+            src="/prolite-logo.svg"
             alt="Prolite"
             className="w-8 h-8"
           />

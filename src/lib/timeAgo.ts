@@ -1,5 +1,6 @@
 export function timeAgo(dateString: string) {
-  const date = new Date(dateString);
+  const date = new Date(dateString + "Z");
+
   const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
   if (Number.isNaN(diffInSeconds) || diffInSeconds < 0) {

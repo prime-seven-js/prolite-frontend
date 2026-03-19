@@ -19,6 +19,7 @@ import { postService } from "@/services/postService";
 // Types
 import type { PostComment } from "@/types/post";
 import type { PostCardProps } from "@/types/newfeedspage";
+import { useNavigate } from "react-router";
 
 export function PostCard({
   post,
@@ -41,6 +42,7 @@ export function PostCard({
   const [submitCommentLoading, setSubmitCommentLoading] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [showAllComments, setShowAllComments] = useState(false);
+  const navigate = useNavigate();
 
   // Global store 
   const deletePost = usePostService((s) => s.deletePost);
@@ -166,12 +168,14 @@ export function PostCard({
       style={{ animationDelay: `${idx * 80}ms` }}
     >
       <div className="flex gap-3">
-        <InitialAvatar
-          name={post.users.username}
-          sizeClassName="w-10 h-10"
-          textClassName="text-sm"
-          wrapperClassName="shrink-0 self-start mt-0.5"
-        />
+        <div className="hover:cursor-pointer" onClick={() => navigate(`/profile/${post.user_id}`)}>
+          <InitialAvatar
+            name={post.users.username}
+            sizeClassName="w-10 h-10"
+            textClassName="text-sm"
+            wrapperClassName="shrink-0 self-start mt-0.5"
+          />
+        </div>
 
         <div className="flex-1 min-w-0">
           {/* Post header */}

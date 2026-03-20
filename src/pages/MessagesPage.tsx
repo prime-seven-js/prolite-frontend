@@ -17,7 +17,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useGlobalStore } from "@/stores/useGlobalStore";
 import { useMessageStore } from "@/stores/useMessageStore";
 
-import { timeAgo } from "@/lib/timeAgo";
+import { timeAgo } from "@/lib/converttime";
 // Custom Hooks
 import { useUserLookup } from "@/hooks/useUserLookup";
 import { useInitData } from "@/hooks/useInitData";

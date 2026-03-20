@@ -1,5 +1,5 @@
 // Lib
-import { timeAgo } from "@/lib/timeAgo";
+import { timeAgo } from "@/lib/converttime";
 // Type
 import type { PostHeaderProps } from "@/types/newfeedspage";
 

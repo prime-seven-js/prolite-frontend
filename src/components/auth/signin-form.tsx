@@ -41,8 +41,9 @@ export function SigninForm({
         try {
             await signIn(email, password);
             navigate("/");
-        } catch (err: any) {
-            if (err.response?.status === 401) {
+        } catch (err: unknown) {
+            const axiosError = err as { response?: { status?: number } };
+            if (axiosError.response?.status === 401) {
                 setError("password", {
                     message: "Your email or password is invalid !",
                 })

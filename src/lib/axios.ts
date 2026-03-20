@@ -21,7 +21,6 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const { token } = useAuthStore.getState();
-      // Only auto-logout if we had a token (it expired)
       if (token) {
         useAuthStore.getState().clearState();
         window.location.href = "/signin";

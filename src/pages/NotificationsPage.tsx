@@ -23,9 +23,10 @@ import { useGlobalStore } from "@/stores/useGlobalStore";
 // Custom Hooks
 import { useUserLookup } from "@/hooks/useUserLookup";
 import { useInitData } from "@/hooks/useInitData";
-import { timeAgo } from "@/lib/timeAgo";
+import { timeAgo } from "@/lib/converttime";
 
 import type { Notification, NotificationType } from "@/types/notification";
+import { useFriendStore } from "@/stores/useFriendStore";
 
 // ── Helpers ──────────────────────────────────────────────────
 const NOTIFICATION_META: Record<
@@ -76,13 +77,13 @@ const NotificationsPage = () => {
   const user = useAuthStore((s) => s.user);
   const fetchAllUsersData = useGlobalStore((s) => s.fetchAllUsersData);
   const notifications = useNotificationStore((s) => s.notifications);
-  const pendingRequests = useNotificationStore((s) => s.pendingRequests);
+  const pendingRequests = useFriendStore((s) => s.pendingRequests);
   const loading = useNotificationStore((s) => s.loading);
   const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
-  const fetchPendingRequests = useNotificationStore((s) => s.fetchPendingRequests);
-  const acceptFriendRequest = useNotificationStore((s) => s.acceptFriendRequest);
-  const declineFriendRequest = useNotificationStore((s) => s.declineFriendRequest);
+  const fetchPendingRequests = useFriendStore((s) => s.fetchPendingRequests);
+  const acceptFriendRequest = useFriendStore((s) => s.acceptFriendRequest);
+  const declineFriendRequest = useFriendStore((s) => s.declineFriendRequest);
 
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 

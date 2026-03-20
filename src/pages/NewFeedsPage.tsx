@@ -9,7 +9,7 @@ import { preparePostImageUrls } from "@/lib/postImages";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useGlobalStore } from "@/stores/useGlobalStore";
-import { usePostService } from "@/stores/usePostService";
+import { usePostService } from "@/stores/usePostStore";
 // Custom Hooks
 import { useUserLookup } from "@/hooks/useUserLookup";
 import { useInitData } from "@/hooks/useInitData";
@@ -102,7 +102,7 @@ const NewFeedsPage = () => {
   return (
     // Page layout
     <PageLayout username={user.username} activePath="/" onNewPost={() => setShowComposer(true)} >
-      <div className="max-w-xl mx-auto px-4 py-6 space-y-0 no-scrollbar">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-0 no-scrollbar">
         {/* Post Composer */}
         <PostComposer
           username={user.username}

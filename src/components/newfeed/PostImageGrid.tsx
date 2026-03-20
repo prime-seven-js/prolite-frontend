@@ -10,17 +10,26 @@ import type { PostImageGridProps } from "@/types/newfeedspage";
 
 // Adjust height of the image based on the location "feed" or "composer"
 const getSliderHeightClassName = (variant: "feed" | "composer") =>
-  variant === "composer"
-    ? "h-[240px] sm:h-[280px]"
-    : "h-[360px] sm:h-[440px]";
+  variant === "composer" ? "h-[240px] sm:h-[280px]" : "h-[360px] sm:h-[440px]";
 
-
-export function PostImageGrid({ imageUrls, className = "", variant = "feed", onRemoveImage }: PostImageGridProps) {
+export function PostImageGrid({
+  imageUrls,
+  className = "",
+  variant = "feed",
+  onRemoveImage,
+}: PostImageGridProps) {
   const canOpenLightbox = variant === "feed";
   // React Hook
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const lightboxRef = useRef<HTMLDivElement | null>(null);
+
+  const closeLightbox = async () => {
+    setIsLightboxOpen(false);
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     setActiveIndex((currentIndex) => {
@@ -36,15 +45,17 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") void closeLightbox();
       if (imageUrls.length <= 1) return;
-      if (event.key === "ArrowLeft") setActiveIndex((i) => (i === 0 ? imageUrls.length - 1 : i - 1));
-      if (event.key === "ArrowRight") setActiveIndex((i) => (i === imageUrls.length - 1 ? 0 : i + 1));
+      if (event.key === "ArrowLeft")
+        setActiveIndex((i) => (i === 0 ? imageUrls.length - 1 : i - 1));
+      if (event.key === "ArrowRight")
+        setActiveIndex((i) => (i === imageUrls.length - 1 ? 0 : i + 1));
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [imageUrls.length, isLightboxOpen]);
+  }, [imageUrls.length, isLightboxOpen, closeLightbox]);
 
   useEffect(() => {
     if (!isLightboxOpen || !canOpenLightbox) return;
@@ -55,7 +66,7 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
     };
     document.addEventListener("fullscreenchange", syncWithFullscreen);
     if (!document.fullscreenElement && lightboxElement.requestFullscreen) {
-      void lightboxElement.requestFullscreen().catch(() => { });
+      void lightboxElement.requestFullscreen().catch(() => {});
     }
     return () => {
       document.removeEventListener("fullscreenchange", syncWithFullscreen);
@@ -74,17 +85,14 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
     setIsLightboxOpen(true);
   };
 
-  const closeLightbox = async () => {
-    setIsLightboxOpen(false);
-    if (document.fullscreenElement) {
-      await document.exitFullscreen().catch(() => { });
-    }
-  };
-
   return (
     <>
-      <div className={`mt-3 overflow-hidden rounded-[26px] border border-white/8 bg-[#071320] ${className}`}>
-        <div className={`group relative overflow-hidden bg-[#091727] ${getSliderHeightClassName(variant)}`}>
+      <div
+        className={`mt-3 overflow-hidden rounded-[26px] border border-white/8 bg-[#071320] ${className}`}
+      >
+        <div
+          className={`group relative overflow-hidden bg-[#091727] ${getSliderHeightClassName(variant)}`}
+        >
           <div
             className="flex h-full transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -98,10 +106,18 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
                     className="h-full w-full cursor-zoom-in"
                     aria-label={`Open image ${index + 1} in full size`}
                   >
-                    <PostImage src={imageUrl} index={index} className="object-cover" />
+                    <PostImage
+                      src={imageUrl}
+                      index={index}
+                      className="object-cover"
+                    />
                   </button>
                 ) : (
-                  <PostImage src={imageUrl} index={index} className="object-cover" />
+                  <PostImage
+                    src={imageUrl}
+                    index={index}
+                    className="object-cover"
+                  />
                 )}
               </div>
             ))}
@@ -132,13 +148,21 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
 
         {hasMultipleImages && (
           <div className="flex items-center justify-center gap-2 bg-[#071320] px-4 py-3">
-            <DotIndicator count={imageUrls.length} activeIndex={activeIndex} onSelect={setActiveIndex} />
+            <DotIndicator
+              count={imageUrls.length}
+              activeIndex={activeIndex}
+              onSelect={setActiveIndex}
+            />
           </div>
         )}
       </div>
 
       {isLightboxOpen && (
-        <div ref={lightboxRef} className="fixed inset-0 z-90 bg-black" onClick={() => void closeLightbox()}>
+        <div
+          ref={lightboxRef}
+          className="fixed inset-0 z-90 bg-black"
+          onClick={() => void closeLightbox()}
+        >
           <button
             type="button"
             onClick={() => void closeLightbox()}
@@ -159,11 +183,17 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
             className="relative flex h-screen w-screen items-center justify-center p-4 sm:p-8"
             onClick={(e) => e.stopPropagation()}
           >
-            <PostImage src={imageUrls[activeIndex]} index={activeIndex} className="object-contain" />
+            <PostImage
+              src={imageUrls[activeIndex]}
+              index={activeIndex}
+              className="object-contain"
+            />
           </div>
 
           <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-black/45 px-4 py-2 text-sm text-white">
-            <span>{activeIndex + 1}/{imageUrls.length}</span>
+            <span>
+              {activeIndex + 1}/{imageUrls.length}
+            </span>
             {hasMultipleImages && (
               <DotIndicator
                 count={imageUrls.length}
@@ -182,7 +212,13 @@ export function PostImageGrid({ imageUrls, className = "", variant = "feed", onR
 
 // --- Small helper sub-components (private to this file) ---
 
-function NavArrow({ direction, onClick }: { direction: "left" | "right"; onClick: () => void }) {
+function NavArrow({
+  direction,
+  onClick,
+}: {
+  direction: "left" | "right";
+  onClick: () => void;
+}) {
   const isLeft = direction === "left";
   return (
     <button
@@ -191,26 +227,51 @@ function NavArrow({ direction, onClick }: { direction: "left" | "right"; onClick
       className={`absolute ${isLeft ? "left-3" : "right-3"} top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white opacity-100 transition hover:bg-black/65 sm:opacity-0 sm:group-hover:opacity-100`}
       aria-label={`${isLeft ? "Previous" : "Next"} image`}
     >
-      {isLeft ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+      {isLeft ? (
+        <ChevronLeft className="h-5 w-5" />
+      ) : (
+        <ChevronRight className="h-5 w-5" />
+      )}
     </button>
   );
 }
 
-function LightboxArrow({ direction, onClick }: { direction: "left" | "right"; onClick: () => void }) {
+function LightboxArrow({
+  direction,
+  onClick,
+}: {
+  direction: "left" | "right";
+  onClick: () => void;
+}) {
   const isLeft = direction === "left";
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className={`absolute ${isLeft ? "left-4" : "right-4"} top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20`}
       aria-label={`${isLeft ? "Previous" : "Next"} image`}
     >
-      {isLeft ? <ChevronLeft className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
+      {isLeft ? (
+        <ChevronLeft className="h-6 w-6" />
+      ) : (
+        <ChevronRight className="h-6 w-6" />
+      )}
     </button>
   );
 }
 
-function PostImage({ src, index, className }: { src: string; index: number; className: string }) {
+function PostImage({
+  src,
+  index,
+  className,
+}: {
+  src: string;
+  index: number;
+  className: string;
+}) {
   return (
     <img
       src={src}

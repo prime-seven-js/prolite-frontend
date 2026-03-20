@@ -57,11 +57,16 @@ export interface MessageState {
 
 export interface NotificationState {
   notifications: Notification[];
-  pendingRequests: FriendRequest[];
   loading: boolean;
 
   fetchNotifications: () => Promise<void>;
   markAllRead: () => Promise<void>;
+}
+
+export interface FriendState {
+  pendingRequests: FriendRequest[];
+  loading: boolean;
+
   fetchPendingRequests: () => Promise<void>;
   acceptFriendRequest: (friendshipId: string) => Promise<void>;
   declineFriendRequest: (friendshipId: string) => Promise<void>;

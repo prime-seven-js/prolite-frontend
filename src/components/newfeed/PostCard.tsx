@@ -13,7 +13,7 @@ import { CommentItem } from "@/components/newfeed/CommentItem";
 import { CommentInput } from "@/components/newfeed/CommentInput";
 // React Hooks & Global state
 import { useEffect, useState } from "react";
-import { usePostService } from "@/stores/usePostService";
+import { usePostService } from "@/stores/usePostStore";
 // Services 
 import { postService } from "@/services/postService";
 // Types
@@ -76,6 +76,7 @@ export function PostCard({
   // Load comments on mount
   useEffect(() => {
     if (!commentsLoaded && !commentLoading) loadComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commentsLoaded, commentLoading, post.post_id, currentUser, userLookup]);
 
   // Toggle Like

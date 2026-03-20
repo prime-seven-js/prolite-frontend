@@ -1,5 +1,5 @@
 // Icons
-import { Bell, Search, Home, User, LogOut, Plus } from "lucide-react";
+import { Bell, Search, Home, LogOut, Plus } from "lucide-react";
 // Shadcn
 import { Button } from "@/components/ui/button";
 // React-router Hook & Global state
@@ -12,7 +12,7 @@ export function MobileBottomNav({ activePath, onOpenComposer }: MobileBottomNavP
   // Use React-router Hook
   const navigate = useNavigate();
   // Global state
-  const { signOut, user } = useAuthStore();
+  const { signOut } = useAuthStore();
   // Check whether the current page is active or not
   const iconClass = (path: string) =>
     activePath === path

@@ -121,19 +121,20 @@ const SearchPage = () => {
             return (
               <div
                 key={u.user_id}
-                className={`hover:cursor-pointer border-b border-white/4 px-4 py-4 transition-colors animate-fade-in-up hover:bg-white/1.5 ${isHighlighted ? "bg-[#2496d4]/5" : ""
+                className={`border-b border-white/4 px-4 py-4 transition-colors animate-fade-in-up hover:bg-white/1.5 ${isHighlighted ? "bg-[#2496d4]/5" : ""
                   }`}
                 style={{ animationDelay: `${i * 50}ms` }}
-                onClick={() => navigate(`/profile/${u.user_id}`)}
               >
-                <div className="flex items-center gap-3">
-                  <InitialAvatar
-                    name={u.username}
-                    avatarUrl={u.avatar}
-                    sizeClassName="w-12 h-12"
-                    textClassName="text-base"
-                  />
-                  <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 hover:cursor-pointer">
+                  <div className="hover:cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
+                    <InitialAvatar
+                      name={u.username}
+                      avatarUrl={u.avatar}
+                      sizeClassName="w-12 h-12"
+                      textClassName="text-base"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 hover:cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
                     <p className="text-[15px] font-semibold">@{u.username}</p>
                     {u.bio && (
                       <p className="text-sm text-gray-400 mt-1 line-clamp-2">{u.bio}</p>
@@ -154,7 +155,7 @@ const SearchPage = () => {
                         size="sm"
                         onClick={() => void handleSendFriendRequest(u.user_id)}
                         disabled={isSending}
-                        className="rounded-full text-xs font-semibold btn-gradient gap-1.5"
+                        className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
                       >
                         <UserPlus className="w-3.5 h-3.5" />
                         {isSending ? "Sending..." : "Add Friend"}

@@ -25,3 +25,16 @@ export function timeAgo(dateString: string) {
 
   return "just now";
 }
+
+export function formatToVNDate(dateString: string) {
+  const date = new Date(dateString);
+
+  // Cộng thêm 7 tiếng (UTC+7)
+  const vnDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  const day = String(vnDate.getDate()).padStart(2, "0");
+  const month = String(vnDate.getMonth() + 1).padStart(2, "0");
+  const year = vnDate.getFullYear();
+
+  return `${day}-${month}-${year}`;
+}

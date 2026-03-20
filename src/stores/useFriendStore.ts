@@ -5,6 +5,7 @@ import type { FriendState } from "@/types/store";
 export const useFriendStore = create<FriendState>()((set) => ({
   pendingRequests: [],
   loading: false,
+  userFriendData: [],
 
   fetchPendingRequests: async () => {
     try {
@@ -19,7 +20,9 @@ export const useFriendStore = create<FriendState>()((set) => ({
     try {
       await friendService.acceptRequest(friendshipId);
       set((state) => ({
-        pendingRequests: state.pendingRequests.filter((r) => r.id !== friendshipId),
+        pendingRequests: state.pendingRequests.filter(
+          (r) => r.id !== friendshipId,
+        ),
       }));
     } catch (err) {
       console.log("Failed to accept friend request", err);
@@ -30,12 +33,22 @@ export const useFriendStore = create<FriendState>()((set) => ({
     try {
       await friendService.declineRequest(friendshipId);
       set((state) => ({
-        pendingRequests: state.pendingRequests.filter((r) => r.id !== friendshipId),
+        pendingRequests: state.pendingRequests.filter(
+          (r) => r.id !== friendshipId,
+        ),
       }));
     } catch (err) {
       console.log("Failed to decline friend request", err);
     }
   },
 
-  
+  fetchUserFriendData: async () => {
+    try {
+      const userFriendData = await friendService.fetchFriends();
+      console.log(userFriendData);
+      set({ userFriendData });
+    } catch (err) {
+      console.log("Failed to fetch accepted friend data", err);
+    }
+  },
 }));

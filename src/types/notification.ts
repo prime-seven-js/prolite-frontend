@@ -1,4 +1,4 @@
-export type NotificationType = "like" | "comment" | "friend_request";
+export type NotificationType = "like" | "comment";
 
 export interface Notification {
   id: string;
@@ -17,4 +17,12 @@ export interface FriendRequest {
     username: string;
     avatar?: string;
   };
+}
+
+export interface Friend {
+  friendship_id: string,
+  friend_since: string,
+  user_id: string,
+  username: string,
+  avatar: string
 }

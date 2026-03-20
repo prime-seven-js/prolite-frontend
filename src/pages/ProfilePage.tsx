@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { Edit3, UserPlus } from "lucide-react";
+import { Edit3, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -14,17 +14,21 @@ import { useInitData } from "@/hooks/useInitData";
 import type { Post } from "@/types/post";
 import { PostHeader } from "@/components/newfeed/PostHeader";
 import { PostImageGrid } from "@/components/newfeed/PostImageGrid";
+import { useFriendStore } from "@/stores/useFriendStore";
 
 const ProfilePage = () => {
   const { userId } = useParams();
-  const { user } = useAuthStore();
-  const { fetchAllPostsData, postsData } = usePostService();
-
+  const user = useAuthStore((s) => (s.user));
+  const fetchAllPostsData = usePostService((s) => (s.fetchAllPostsData));
+  const postsData = usePostService((s) => (s.postsData));
+  const fetchUserFriendData = useFriendStore((s) => (s.fetchUserFriendData))
+  const userFriendData = useFriendStore((s) => (s.userFriendData))
+  
   const [userData, setUserData] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
 
-  useInitData(fetchAllPostsData);
+  useInitData(fetchAllPostsData, fetchUserFriendData);
 
   useEffect(() => {
     if (!userId || !user) return;
@@ -65,6 +69,7 @@ const ProfilePage = () => {
   const filteredPosts = postsData.filter(post => post.user_id === userId);
 
   const isOwnProfile = userId === user.user_id;
+  const isFriend = userFriendData.some((friend) => friend.user_id === user.user_id);
 
   return (
     <PageLayout
@@ -140,14 +145,20 @@ const ProfilePage = () => {
             <span className="text-gray-500 text-sm">
               Created at {formatToVNDate(userData.createdAt || "")}
             </span>
-            {!isOwnProfile && (
+            {!isOwnProfile && 
+            (isFriend ? ( 
               <Button
                 size="sm"
                 className="rounded-full text-xs font-semibold btn-gradient gap-1.5"
               >
                 <UserPlus className="w-3.5 h-3.5" />Add Friend
               </Button>
-            )}
+            ) : <Button
+                size="sm"
+                className="rounded-full text-xs font-semibold bg-gradient-primary text-neutral-50 gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />Your Friend
+              </Button>)}
           </div>
         </div>
       </div>

@@ -22,7 +22,10 @@ export const messageService = {
     return res.data;
   },
 
-  sendMessage: async (conversationId: string, content: string): Promise<Message> => {
+  sendMessage: async (
+    conversationId: string,
+    content: string,
+  ): Promise<Message> => {
     const res = await api.post<Message>(
       `/protected/conversations/${conversationId}/messages`,
       { content },

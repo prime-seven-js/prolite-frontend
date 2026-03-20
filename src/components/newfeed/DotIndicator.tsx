@@ -1,3 +1,5 @@
+
+
 interface DotIndicatorProps {
   count: number;
   activeIndex: number;
@@ -27,11 +29,10 @@ export function DotIndicator({
             if (stopPropagation) e.stopPropagation();
             onSelect(index);
           }}
-          className={`h-2 rounded-full transition-all ${
-            index === activeIndex
+          className={`h-2 rounded-full transition-all ${index === activeIndex
               ? `w-6 ${activeDotColor}`
               : `w-2 ${inactiveDotColor}`
-          }`}
+            }`}
           aria-label={`Go to image ${index + 1}`}
         />
       ))}

@@ -18,12 +18,14 @@ export function CommentItem({ comment, currentUserId, deletingCommentId, onDelet
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-3 min-w-0">
+          {/* Header */}
           <PostHeader
             username={comment.user.username}
             timestamp={comment.created_at}
             size="sm"
           />
 
+          {/* Show delete button if commentUserID === currentUserId */}
           {(currentUserId && comment.user_id === currentUserId) && onDelete && (
             <Button
               variant="ghost"
@@ -36,6 +38,7 @@ export function CommentItem({ comment, currentUserId, deletingCommentId, onDelet
             </Button>
           )}
         </div>
+        {/* Comment Content */}
         <p className="mt-1 text-sm leading-relaxed text-gray-300 wrap-anywhere">
           {comment.content}
         </p>

@@ -129,7 +129,6 @@ export const postService = {
       image_urls: image_urls ?? [],
     });
     const post = mapPost(res.data, user);
-    // Backend trả về post_images sau khi insert, nếu rỗng thì fallback về input urls
     if (post.image_urls.length === 0 && image_urls?.length) {
       post.image_urls = image_urls;
     }

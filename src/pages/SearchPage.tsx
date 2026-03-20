@@ -15,12 +15,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 // Custom Hooks
 import { useInitData } from "@/hooks/useInitData";
+import { useFriendStore } from "@/stores/useFriendStore";
 
 const SearchPage = () => {
   // Current authenticated user
   const user = useAuthStore((s) => s.user);
   const usersData = useGlobalStore((s) => s.usersData);
   const fetchAllUsersData = useGlobalStore((s) => s.fetchAllUsersData);
+  const fetchUserFriendData = useFriendStore((s) => (s.fetchUserFriendData))
+  const userFriendData = useFriendStore((s) => (s.userFriendData))
 
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
@@ -30,7 +33,7 @@ const SearchPage = () => {
 
   // Highlight a user from query params: ?user=ID
   const highlightedUserId = searchParams.get("user");
-  useInitData(fetchAllUsersData);
+  useInitData(fetchAllUsersData, fetchUserFriendData);
 
   // Auto-fill search input when navigated with ?user=ID
   useEffect(() => {
@@ -51,7 +54,10 @@ const SearchPage = () => {
       u.username.toLowerCase().includes(query.toLowerCase()),
     );
   }, [usersData, user, query]);
-  const displayedUsers = filteredUsers.slice(0, 5);
+  const displayedUsers = useMemo(() => {
+    const shuffled = [...filteredUsers].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 5);
+  }, [filteredUsers]);
 
   const handleSendFriendRequest = async (userId: string) => {
     try {
@@ -117,6 +123,7 @@ const SearchPage = () => {
             const isHighlighted = u.user_id === highlightedUserId;
             const hasSent = sentRequests.has(u.user_id);
             const isSending = sendingTo === u.user_id;
+            const isFriend = userFriendData.some((friend) => friend.user_id === u.user_id);
 
             return (
               <div
@@ -140,7 +147,7 @@ const SearchPage = () => {
                       <p className="text-sm text-gray-400 mt-1 line-clamp-2">{u.bio}</p>
                     )}
                   </div>
-                  <div className="shrink-0">
+                  {!isFriend && <div className="shrink-0">
                     {hasSent ? (
                       <Button
                         variant="outline"
@@ -161,7 +168,7 @@ const SearchPage = () => {
                         {isSending ? "Sending..." : "Add Friend"}
                       </Button>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             );

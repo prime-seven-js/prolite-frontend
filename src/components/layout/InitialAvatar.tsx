@@ -4,7 +4,7 @@ import type { InitialAvatarProps } from "@/types/pagelayout";
 export function InitialAvatar({ name, avatarUrl, sizeClassName, textClassName, wrapperClassName = "" }: InitialAvatarProps) {
   // Get the first letter of username to make initial avatar
   const initial = name.trim().charAt(0).toUpperCase() || "?";
-
+  
   return (
     <div className={`avatar-ring ${wrapperClassName}`.trim()}>
       {avatarUrl ? (

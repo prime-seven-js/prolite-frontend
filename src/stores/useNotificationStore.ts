@@ -22,7 +22,10 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
     try {
       await notificationService.markAllRead();
       set((state) => ({
-        notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
+        notifications: state.notifications.map((n) => ({
+          ...n,
+          is_read: true,
+        })),
       }));
     } catch (err) {
       console.log("Failed to mark all read", err);

@@ -23,7 +23,6 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true });
           await authService.signUp(email, username, password);
-          console.log("Registered successfully !");
         } catch (err) {
           console.log("Failed to register: ", err);
           throw err;

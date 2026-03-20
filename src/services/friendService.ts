@@ -1,13 +1,5 @@
 import api from "@/lib/axios";
-import type { FriendRequest } from "@/types/notification";
-
-export interface Friend {
-  friendship_id: string;
-  friend_since: string;
-  user_id: string;
-  username: string;
-  avatar?: string;
-}
+import type { Friend, FriendRequest } from "@/types/notification";
 
 export const friendService = {
   sendRequest: async (userId: string) => {

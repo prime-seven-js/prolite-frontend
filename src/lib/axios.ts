@@ -15,19 +15,4 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401 (expired token)
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const { token } = useAuthStore.getState();
-      if (token) {
-        useAuthStore.getState().clearState();
-        window.location.href = "/signin";
-      }
-    }
-    return Promise.reject(error);
-  },
-);
-
 export default api;

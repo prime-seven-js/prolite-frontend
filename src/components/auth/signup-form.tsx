@@ -1,29 +1,37 @@
 // From shadcn
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 // React-router Hook & Global state
-import { useAuthStore } from "@/stores/useAuthStore"
-import { useNavigate } from "react-router"
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useNavigate } from "react-router";
+import { authService } from "@/services/authService";
 
 // Use zod to validate sign up form
 const signupSchema = z.object({
-  email: z.email("Invalid email address"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
   username: z
     .string()
+    .trim()
+    .min(1, "Username is required")
     .min(3, "Username must be at least 3 characters")
     .max(20, "Username must be at most 20 characters")
     .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-})
-type SignupFormValues = z.infer<typeof signupSchema>
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+});
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 
 export function SignupForm({
@@ -36,6 +44,7 @@ export function SignupForm({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setError,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
   });
@@ -46,12 +55,64 @@ export function SignupForm({
 
   // Navigate to SignInPage when registering successfully
   const onSubmit = async (data: SignupFormValues) => {
-    const { email, username, password } = data;
-    await signUp(email, username, password);
+    const email = data.email.trim().toLowerCase();
+    const username = data.username.trim();
+    const password = data.password;
 
-    navigate("/signin");
-    console.log(data);
-  }
+    try {
+      const users = await authService.fetchUsers();
+      const emailExists = users.some(
+        (user) => user.email.toLowerCase() === email,
+      );
+      const usernameExists = users.some(
+        (user) => user.username.toLowerCase() === username.toLowerCase(),
+      );
+
+      if (emailExists) {
+        setError("email", {
+          message: "This email is already registered.",
+        });
+        return;
+      }
+
+      if (usernameExists) {
+        setError("username", {
+          message: "This username is already taken.",
+        });
+        return;
+      }
+
+      await signUp(email, username, password);
+      navigate("/signin");
+    } catch (err: unknown) {
+      const axiosError = err as {
+        response?: {
+          data?: {
+            error?: string;
+          };
+        };
+      };
+      const errorMessage = axiosError.response?.data?.error?.toLowerCase() ?? "";
+
+      if (errorMessage.includes("email")) {
+        setError("email", {
+          message: "This email is already registered.",
+        });
+        return;
+      }
+
+      if (errorMessage.includes("username")) {
+        setError("username", {
+          message: "This username is already taken.",
+        });
+        return;
+      }
+
+      setError("root", {
+        message: "Unable to create your account right now. Please try again.",
+      });
+    }
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -89,6 +150,7 @@ export function SignupForm({
                   <p className="text-sm text-red-500">{errors.password.message}</p>
                 )}
               </div>
+              {errors.root && <p className="text-sm text-red-500">{errors.root.message}</p>}
               {/* Submit Button */}
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creating account..." : "Create Account"}
@@ -121,5 +183,5 @@ export function SignupForm({
         and <a href="#">Privacy Policy</a>.
       </div>
     </div>
-  )
+  );
 }

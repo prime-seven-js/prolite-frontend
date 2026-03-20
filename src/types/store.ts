@@ -1,7 +1,7 @@
 import type { User } from "@/types/user";
 import type { Post } from "@/types/post";
 import type { Conversation, Message } from "@/types/message";
-import type { Notification, FriendRequest } from "@/types/notification";
+import type { Notification, FriendRequest, Friend } from "@/types/notification";
 
 export interface AuthState {
   token: string | null;
@@ -65,10 +65,11 @@ export interface NotificationState {
 
 export interface FriendState {
   pendingRequests: FriendRequest[];
+  userFriendData: Friend[];
   loading: boolean;
 
   fetchPendingRequests: () => Promise<void>;
   acceptFriendRequest: (friendshipId: string) => Promise<void>;
   declineFriendRequest: (friendshipId: string) => Promise<void>;
+  fetchUserFriendData: () => Promise<void>
 }
-

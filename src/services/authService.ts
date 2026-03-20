@@ -37,6 +37,11 @@ const normalizeUser = (user: AuthResponseUser | ApiUser): User => ({
 });
 
 export const authService = {
+  fetchUsers: async () => {
+    const res = await api.get<ApiUser[]>("/users");
+    return res.data.map(normalizeUser);
+  },
+
   signUp: async (email: string, username: string, password: string) => {
     const res = await api.post("/register", { email, username, password });
     return res.data;

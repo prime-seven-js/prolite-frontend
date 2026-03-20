@@ -53,6 +53,7 @@ const MessagesPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 
   const handleSendMessage = async () => {
     const trimmed = messageInput.trim();
     if (!trimmed || !activeConversationId) return;

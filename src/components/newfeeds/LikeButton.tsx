@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
+import type { LikeButtonProps } from "@/types/newfeedspage";
 
-interface LikeButtonProps {
-  liked: boolean;
-  likes: number;
-  loading: boolean;
-  animating: boolean;
-  onClick: () => void;
-}
+/**
+ * Nút thích ở trên bài đăng.  
+ */
 
-export function LikeButton({ liked, likes, loading, animating, onClick }: LikeButtonProps) {
+export function LikeButton({
+  liked,
+  likes,
+  loading,
+  animating,
+  onClick,
+}: LikeButtonProps) {
   return (
     <Button
       variant="ghost"
@@ -20,14 +23,12 @@ export function LikeButton({ liked, likes, loading, animating, onClick }: LikeBu
     >
       <Heart
         className={`w-4.5 h-4.5 transition-colors ${liked
-            ? "fill-pink-500 text-pink-500"
-            : "text-gray-600 group-hover:text-pink-400"
+          ? "fill-pink-500 text-pink-500"
+          : "text-gray-600 group-hover:text-pink-400"
           } ${animating ? "animate-like-bounce" : ""}`}
       />
       <span
-        className={`text-xs transition-colors ${liked
-            ? "text-pink-500"
-            : "text-gray-600 group-hover:text-pink-400"
+        className={`text-xs transition-colors ${liked ? "text-pink-500" : "text-gray-600 group-hover:text-pink-400"
           }`}
       >
         {likes}

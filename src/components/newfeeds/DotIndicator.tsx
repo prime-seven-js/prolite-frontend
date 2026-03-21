@@ -1,13 +1,8 @@
+import type { DotIndicatorProps } from "@/types/newfeedspage";
 
-
-interface DotIndicatorProps {
-  count: number;
-  activeIndex: number;
-  onSelect: (index: number) => void;
-  activeDotColor?: string;
-  inactiveDotColor?: string;
-  stopPropagation?: boolean;
-}
+/**
+ * Các nút cho biết vị trí của ảnh khi đăng tải nhiều ảnh.
+ */
 
 export function DotIndicator({
   count,
@@ -17,6 +12,7 @@ export function DotIndicator({
   inactiveDotColor = "bg-white/25 hover:bg-white/45",
   stopPropagation = false,
 }: DotIndicatorProps) {
+  // Nếu chỉ có 1 ảnh thì không xuất hiện
   if (count <= 1) return null;
 
   return (
@@ -29,10 +25,11 @@ export function DotIndicator({
             if (stopPropagation) e.stopPropagation();
             onSelect(index);
           }}
-          className={`h-2 rounded-full transition-all ${index === activeIndex
+          className={`h-2 rounded-full transition-all ${
+            index === activeIndex
               ? `w-6 ${activeDotColor}`
               : `w-2 ${inactiveDotColor}`
-            }`}
+          }`}
           aria-label={`Go to image ${index + 1}`}
         />
       ))}

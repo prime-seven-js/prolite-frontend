@@ -1,25 +1,39 @@
-// Shadcn
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-// Icons
 import { MessageCircle } from "lucide-react";
-// Components
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-import { PostImageGrid } from "@/components/newfeed/PostImageGrid";
-import { PostHeader } from "@/components/newfeed/PostHeader";
-import { PostMenu } from "@/components/newfeed/PostMenu";
-import { LikeButton } from "@/components/newfeed/LikeButton";
-import { CommentItem } from "@/components/newfeed/CommentItem";
-import { CommentInput } from "@/components/newfeed/CommentInput";
-// React Hooks & Global state
-import { useEffect, useState } from "react";
-import { usePostService } from "@/stores/usePostStore";
-// Services 
-import { postService } from "@/services/postService";
-// Types
-import type { PostComment } from "@/types/post";
-import type { PostCardProps } from "@/types/newfeedspage";
+import { PostImageGrid } from "@/components/newfeeds/PostImageGrid";
+import { PostHeader } from "@/components/newfeeds/PostHeader";
+import { PostMenu } from "@/components/newfeeds/PostMenu";
+import { LikeButton } from "@/components/newfeeds/LikeButton";
+import { CommentItem } from "@/components/newfeeds/CommentItem";
+import { CommentInput } from "@/components/newfeeds/CommentInput";
+import { useState } from "react";
+import { useDeletePost } from "@/hooks/usePosts";
+import {
+  usePostLikes,
+  usePostComments,
+  useToggleLike,
+  useCreateComment,
+  useDeleteComment,
+} from "@/hooks/usePostInteractions";
+import { useRealtimePostInteractions } from "@/hooks/useRealtimePostInteractions";
 import { useNavigate } from "react-router";
+import type { PostCardProps } from "@/types/newfeedspage";
+
+/**
+ * Hiển thị một post trong feed.
+ * Queries:
+ * - usePostLikes() → Fetch đếm lượt thích và trạng thái.
+ * - usePostComments() → Fetch danh sách comments.
+ * Mutations:
+ * - useToggleLike() → Like/unlike post.
+ * - useCreateComment() → Tạo comment mới.
+ * - useDeleteComment() → Xóa comment.
+ * - useDeletePost() → Xóa post.
+ * Supabase Realtime:
+ * - useRealtimePostInteractions → Cập nhật các tương tác với các bài post thời gian thực.
+ */
 
 export function PostCard({
   post,
@@ -27,141 +41,85 @@ export function PostCard({
   userLookup,
   idx,
 }: PostCardProps) {
-  // Like state
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes);
-  const [animating, setAnimating] = useState(false);
-  const [likeLoading, setLikeLoading] = useState(false);
-
-  // Comment state
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<PostComment[]>([]);
-  const [commentsLoaded, setCommentsLoaded] = useState(false);
-  const [commentInput, setCommentInput] = useState("");
-  const [commentLoading, setCommentLoading] = useState(false);
-  const [submitCommentLoading, setSubmitCommentLoading] = useState(false);
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [showAllComments, setShowAllComments] = useState(false);
   const navigate = useNavigate();
 
-  // Global store 
-  const deletePost = usePostService((s) => s.deletePost);
-  const deletePostLoading = usePostService((s) => s.deletePostLoading);
+  // Tự động fetch đếm lượt thích và trạng thái.
+  const { data: likeSummary, isLoading: likeLoading } = usePostLikes(
+    post.post_id,
+    currentUser.user_id,
+  );
+  // Tự động fetch danh sách comments
+  const { data: comments = [], isLoading: commentLoading } = usePostComments(
+    post.post_id,
+    currentUser,
+    userLookup,
+  );
 
-  // Fetch initial like state
-  useEffect(() => {
-    let isMounted = true;
-    const syncPostLikes = async () => {
-      try {
-        setLikeLoading(true);
-        const likeSummary = await postService.fetchPostLikes(
-          post.post_id,
-          currentUser.user_id,
-        );
-        if (!isMounted) return;
-        setLikes(likeSummary.count);
-        setLiked(likeSummary.liked);
-      } catch (err) {
-        console.log("Failed to load post likes", err);
-      } finally {
-        if (isMounted) setLikeLoading(false);
-      }
-    };
-    syncPostLikes();
-    return () => {
-      isMounted = false;
-    };
-  }, [post.post_id, currentUser.user_id]);
+  // Cập nhật các tương tác theo post_id theo thời gian thực.
+  useRealtimePostInteractions(post.post_id);
 
-  // Load comments on mount
-  useEffect(() => {
-    if (!commentsLoaded && !commentLoading) loadComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commentsLoaded, commentLoading, post.post_id, currentUser, userLookup]);
+  // Các mutations thực thi các tương tác với post_id.
+  const toggleLikeMutation = useToggleLike(post.post_id, currentUser.user_id);
+  const createCommentMutation = useCreateComment(
+    post.post_id,
+    currentUser,
+    userLookup,
+  );
+  const deleteCommentMutation = useDeleteComment(post.post_id);
+  const deletePostMutation = useDeletePost();
 
-  // Toggle Like
-  const handleToggleLike = async () => {
-    if (likeLoading) return;
-    try {
-      setLikeLoading(true);
-      const likeSummary = await postService.togglePostLike(
-        post.post_id,
-        currentUser.user_id,
-      );
-      setLiked(likeSummary.liked);
-      setLikes(likeSummary.count);
-      setAnimating(true);
-      setTimeout(() => setAnimating(false), 350);
-    } catch (err) {
-      console.log("Failed to toggle post like", err);
-    } finally {
-      setLikeLoading(false);
-    }
+  // Các Local State cho việc hiển thị UI.
+  const [showComments, setShowComments] = useState(false);
+  const [commentInput, setCommentInput] = useState("");
+  const [showAllComments, setShowAllComments] = useState(false);
+  const [animating, setAnimating] = useState(false);
+
+  // Các Derived State lấy từ Query Data.
+  const liked = likeSummary?.liked ?? false;
+  const likes = likeSummary?.count ?? post.likes;
+
+  // Like/Unlike
+  const handleToggleLike = () => {
+    if (likeLoading || toggleLikeMutation.isPending) return;
+    toggleLikeMutation.mutate();
+    setAnimating(true);
+    setTimeout(() => setAnimating(false), 250);
   };
 
-  // Load comments
-  const loadComments = async () => {
-    try {
-      setCommentLoading(true);
-      const fetchedComments = await postService.fetchAllPostComments(
-        post.post_id,
-        currentUser,
-        userLookup,
-      );
-      setComments(fetchedComments);
-      setCommentsLoaded(true);
-      setShowAllComments(false);
-    } catch (err) {
-      console.log("Failed to load post comments", err);
-    } finally {
-      setCommentLoading(false);
-    }
-  };
-
-  // Show comments
+  // Hiển thị thêm comments.
   const handleToggleComments = () => {
-    const next = !showComments;
-    setShowComments(next);
-    if (next && !commentsLoaded && !commentLoading) loadComments();
+    setShowComments((prev) => !prev);
   };
 
-  // Submit comment 
+  // Tạo comment mới.
   const handleSubmitComment = async () => {
     const trimmed = commentInput.trim();
     if (!trimmed) return;
     try {
-      setSubmitCommentLoading(true);
-      const createdComment = await postService.createPostComment(post.post_id, trimmed, currentUser, userLookup);
-      setComments((prev) => [createdComment, ...prev]);
-      setCommentsLoaded(true);
+      await createCommentMutation.mutateAsync(trimmed);
+      setCommentInput("");
       setShowComments(true);
       setShowAllComments(false);
-      setCommentInput("");
     } catch (err) {
       console.log("Failed to create comment", err);
-    } finally {
-      setSubmitCommentLoading(false);
     }
   };
 
-  // Delete comment 
-  const handleDeleteComment = async (commentId: string) => {
-    try {
-      setDeletingCommentId(commentId);
-      await postService.deletePostComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
-    } catch (err) {
-      console.log("Failed to delete comment", err);
-    } finally {
-      setDeletingCommentId(null);
-    }
+  // Xóa comment.
+  const handleDeleteComment = (commentId: string) => {
+    deleteCommentMutation.mutate(commentId);
   };
 
-  // Get visible comments that can be seen in each post
+  // Hiển thị trước 3 comments của bài viết.
   const numberOfVisibleComments = 3;
-  const visibleComments = showAllComments ? comments : comments.slice(0, numberOfVisibleComments);
+  const visibleComments = showAllComments
+    ? comments
+    : comments.slice(0, numberOfVisibleComments);
   const previewComments = comments.slice(0, numberOfVisibleComments);
-  const hiddenCommentsCount = Math.max(comments.length - numberOfVisibleComments, 0);
+  const hiddenCommentsCount = Math.max(
+    comments.length - numberOfVisibleComments,
+    0,
+  );
 
   return (
     <div
@@ -169,7 +127,11 @@ export function PostCard({
       style={{ animationDelay: `${idx * 80}ms` }}
     >
       <div className="flex gap-3">
-        <div className="hover:cursor-pointer" onClick={() => navigate(`/profile/${post.user_id}`)}>
+        {/* Avatar — Click vào để điều hướng đến profile. */}
+        <div
+          className="hover:cursor-pointer"
+          onClick={() => navigate(`/profile/${post.user_id}`)}
+        >
           <InitialAvatar
             name={post.users.username}
             sizeClassName="w-10 h-10"
@@ -179,36 +141,37 @@ export function PostCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          {/* Post header */}
+          {/* Post header: username + timestamp */}
           <div className="flex items-center justify-between">
             <PostHeader
               username={post.users.username}
               timestamp={post.created_at}
             />
-            {/* Post Menu (Only owner of posts can see) */}
+            {/* Menu xóa post — chỉ owner mới thấy */}
             {post.user_id === currentUser.user_id && (
               <PostMenu
-                loading={deletePostLoading}
-                onDelete={() => deletePost(post.post_id)}
+                loading={deletePostMutation.isPending}
+                onDelete={() => deletePostMutation.mutateAsync(post.post_id)}
               />
             )}
           </div>
 
-          {/* Post content */}
+          {/* Post content text */}
           {post.content && (
             <p className="mt-1 text-[15px] leading-relaxed text-gray-100 wrap-anywhere">
               {post.content}
             </p>
           )}
-          {/* Post image (90% AI) */}
+
+          {/* Post images grid */}
           <PostImageGrid imageUrls={post.image_urls} />
 
-          {/* Action buttons */}
+          {/* Action buttons: Like + Comment */}
           <div className="flex items-center justify-between mt-3 max-w-md -ml-2">
             <LikeButton
               liked={liked}
               likes={likes}
-              loading={likeLoading}
+              loading={likeLoading || toggleLikeMutation.isPending}
               animating={animating}
               onClick={handleToggleLike}
             />
@@ -226,7 +189,7 @@ export function PostCard({
             </Button>
           </div>
 
-          {/* Preview comments (collapsed) */}
+          {/* Preview comments (collapsed view) */}
           {!showComments && previewComments.length > 0 && (
             <div className="mt-4 space-y-3">
               {previewComments.map((comment) => (
@@ -249,16 +212,18 @@ export function PostCard({
           {/* Expanded comment section */}
           {showComments && (
             <div className="mt-4 rounded-2xl border border-white/6 bg-white/2 p-4">
+              {/* Comment input */}
               <CommentInput
                 username={currentUser.username}
                 value={commentInput}
                 onChange={setCommentInput}
                 onSubmit={handleSubmitComment}
-                disabled={submitCommentLoading}
+                disabled={createCommentMutation.isPending}
               />
 
               <Separator className="my-4 bg-white/6" />
-              {/* Load comments if exist otherwise print the below text */}
+
+              {/* Comments list */}
               {commentLoading ? (
                 <p className="text-sm text-gray-500">Loading comments...</p>
               ) : comments.length === 0 ? (
@@ -272,11 +237,16 @@ export function PostCard({
                       key={comment.comment_id}
                       comment={comment}
                       currentUserId={currentUser.user_id}
-                      deletingCommentId={deletingCommentId}
+                      deletingCommentId={
+                        deleteCommentMutation.isPending
+                          ? (deleteCommentMutation.variables ?? null)
+                          : null
+                      }
                       onDelete={handleDeleteComment}
                     />
                   ))}
 
+                  {/* Nút show more/less comments */}
                   {hiddenCommentsCount > 0 && (
                     <Button
                       variant="ghost"

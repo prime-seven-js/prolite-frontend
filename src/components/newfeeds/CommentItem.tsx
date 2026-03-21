@@ -1,12 +1,18 @@
-// Shadcn
 import { Button } from "@/components/ui/button";
-// Components
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-import { PostHeader } from "@/components/newfeed/PostHeader";
-// Type
+import { PostHeader } from "@/components/newfeeds/PostHeader";
 import type { CommentItemProps } from "@/types/newfeedspage";
 
-export function CommentItem({ comment, currentUserId, deletingCommentId, onDelete }: CommentItemProps) {
+/**
+ * Danh sách các Comments của 1 post.
+ */
+
+export function CommentItem({
+  comment,
+  currentUserId,
+  deletingCommentId,
+  onDelete,
+}: CommentItemProps) {
   return (
     <div className="flex gap-3">
       <InitialAvatar
@@ -25,16 +31,18 @@ export function CommentItem({ comment, currentUserId, deletingCommentId, onDelet
             size="sm"
           />
 
-          {/* Show delete button if commentUserID === currentUserId */}
-          {(currentUserId && comment.user_id === currentUserId) && onDelete && (
+          {/* Hiện nút Delete nếu comment.user_id === currentUserId */}
+          {currentUserId && comment.user_id === currentUserId && onDelete && (
             <Button
               variant="ghost"
               size="sm"
-              disabled={(deletingCommentId === comment.comment_id)}
+              disabled={deletingCommentId === comment.comment_id}
               onClick={() => onDelete(comment.comment_id)}
               className="h-auto px-2 py-1 text-xs text-red-400 hover:bg-white/4 hover:text-red-300 rounded-full"
             >
-              {(deletingCommentId === comment.comment_id) ? "Deleting..." : "Delete"}
+              {deletingCommentId === comment.comment_id
+                ? "Deleting..."
+                : "Delete"}
             </Button>
           )}
         </div>

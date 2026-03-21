@@ -6,36 +6,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Components
 import { PageLayout } from "@/components/layout/PageLayout";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-// Global states
+// Auth state
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useGlobalStore } from "@/stores/useGlobalStore";
-import { friendService } from "@/services/friendService";
+// TanStack Query hooks — thay thế useGlobalStore và useFriendStore
+import { useAllUsers } from "@/hooks/useAllUsers";
+import { useUserFriends, useSendFriendRequest, usePendingFriendRequests } from "@/hooks/useFriends";
 // React & React-router Hooks
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-// Custom Hooks
-import { useInitData } from "@/hooks/useInitData";
-import { useFriendStore } from "@/stores/useFriendStore";
 
+/**
+ * Trang Search — tìm kiếm users và gửi friend request.
+ *
+ * Data fetching:
+ * - useAllUsers() → danh sách tất cả users
+ * - useUserFriends() → danh sách bạn bè (để ẩn nút "Add Friend")
+ * - useSendFriendRequest() → mutation gửi friend request
+ */
 const SearchPage = () => {
-  // Current authenticated user
+  // Auth state
   const user = useAuthStore((s) => s.user);
-  const usersData = useGlobalStore((s) => s.usersData);
-  const fetchAllUsersData = useGlobalStore((s) => s.fetchAllUsersData);
-  const fetchUserFriendData = useFriendStore((s) => (s.fetchUserFriendData))
-  const userFriendData = useFriendStore((s) => (s.userFriendData))
 
+  // Server state — TanStack Query
+  const { data: usersData = [] } = useAllUsers();
+  const { data: userFriendData = [] } = useUserFriends();
+  const sendFriendRequestMutation = useSendFriendRequest();
+  const { data: pendingRequests = [] } = usePendingFriendRequests();
+
+  // UI state
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [sendingTo, setSendingTo] = useState<string | null>(null);
-  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
-  // Highlight a user from query params: ?user=ID
+  // Highlight user từ query params: ?user=ID (ví dụ khi navigate từ notification)
   const highlightedUserId = searchParams.get("user");
-  useInitData(fetchAllUsersData, fetchUserFriendData);
 
-  // Auto-fill search input when navigated with ?user=ID
+  // Auto-fill search input khi navigate với ?user=ID
   useEffect(() => {
     if (highlightedUserId) {
       const found = usersData.find((u) => u.user_id === highlightedUserId);
@@ -45,7 +51,7 @@ const SearchPage = () => {
     }
   }, [highlightedUserId, usersData]);
 
-  // Exclude current user and filter by username
+  // Loại bỏ current user và lọc theo search query
   const filteredUsers = useMemo(() => {
     if (!user) return [];
     const others = usersData.filter((u) => u.user_id !== user.user_id);
@@ -54,25 +60,24 @@ const SearchPage = () => {
       u.username.toLowerCase().includes(query.toLowerCase()),
     );
   }, [usersData, user, query]);
+
+  const handleSendFriendRequest = async (userId: string) => {
+    try {
+      await sendFriendRequestMutation.mutateAsync(userId);
+    } catch (err) {
+      console.log("Failed to send friend request", err);
+    }
+  };
+
+  // Hiển thị tối đa 5 users ngẫu nhiên
   const displayedUsers = useMemo(() => {
     const shuffled = [...filteredUsers].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 5);
   }, [filteredUsers]);
 
-  const handleSendFriendRequest = async (userId: string) => {
-    try {
-      setSendingTo(userId);
-      await friendService.sendRequest(userId);
-      setSentRequests((prev) => new Set(prev).add(userId));
-    } catch (err) {
-      console.log("Failed to send friend request", err);
-    } finally {
-      setSendingTo(null);
-    }
-  };
-
   if (!user) return <div className="min-h-screen bg-gradient-blue" />;
 
+  // Right sidebar — search tips
   const rightSidebar = (
     <Card className="glass-card border-0 rounded-2xl py-0">
       <CardHeader className="p-5 pb-0">
@@ -92,7 +97,11 @@ const SearchPage = () => {
   );
 
   return (
-    <PageLayout username={user.username} activePath="/search" rightSidebar={rightSidebar}>
+    <PageLayout
+      username={user.username}
+      activePath="/search"
+      rightSidebar={rightSidebar}
+    >
       {/* Search header */}
       <div className="sticky top-14 z-40 glass-header px-4 pt-4 pb-4">
         <h1 className="text-xl font-bold mb-3">Discover People</h1>
@@ -121,8 +130,10 @@ const SearchPage = () => {
         ) : (
           displayedUsers.map((u, i) => {
             const isHighlighted = u.user_id === highlightedUserId;
-            const hasSent = sentRequests.has(u.user_id);
-            const isSending = sendingTo === u.user_id;
+            const hasSent = pendingRequests.some((friend) => friend.users.user_id === u.user_id);
+            const isSending =
+              sendFriendRequestMutation.isPending &&
+              sendFriendRequestMutation.variables === u.user_id;
             const isFriend = userFriendData.some((friend) => friend.user_id === u.user_id);
 
             return (
@@ -133,7 +144,10 @@ const SearchPage = () => {
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div className="flex items-center gap-3 hover:cursor-pointer">
-                  <div className="hover:cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
+                  <div
+                    className="hover:cursor-pointer"
+                    onClick={() => navigate(`/profile/${u.user_id}`)}
+                  >
                     <InitialAvatar
                       name={u.username}
                       avatarUrl={u.avatar}
@@ -141,34 +155,42 @@ const SearchPage = () => {
                       textClassName="text-base"
                     />
                   </div>
-                  <div className="flex-1 min-w-0 hover:cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
+                  <div
+                    className="flex-1 min-w-0 hover:cursor-pointer"
+                    onClick={() => navigate(`/profile/${u.user_id}`)}
+                  >
                     <p className="text-[15px] font-semibold">@{u.username}</p>
                     {u.bio && (
-                      <p className="text-sm text-gray-400 mt-1 line-clamp-2">{u.bio}</p>
+                      <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                        {u.bio}
+                      </p>
                     )}
                   </div>
-                  {!isFriend && <div className="shrink-0">
-                    {hasSent ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled
-                        className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent"
-                      >
-                        Requested
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => void handleSendFriendRequest(u.user_id)}
-                        disabled={isSending}
-                        className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        {isSending ? "Sending..." : "Add Friend"}
-                      </Button>
-                    )}
-                  </div>}
+                  {/* Nút Add Friend — ẩn nếu đã là bạn */}
+                  {!isFriend && (
+                    <div className="shrink-0">
+                      {hasSent ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent"
+                        >
+                          Requested
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleSendFriendRequest(u.user_id)}
+                          disabled={isSending}
+                          className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          {isSending ? "Sending..." : "Add Friend"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

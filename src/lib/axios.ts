@@ -1,6 +1,10 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import axios from "axios";
 
+/**
+ * Khởi tạo luồng nối api
+ */
+
 const api = axios.create({
   baseURL: "https://api.prolite.gay",
 });

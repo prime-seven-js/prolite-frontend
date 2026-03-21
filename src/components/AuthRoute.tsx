@@ -1,6 +1,10 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Navigate, Outlet } from "react-router";
 
+/**
+ * Auth Route - Tự động điều hướng đến NewFeedsPage nếu đã đăng nhập
+ */
+
 const AuthRoute = () => {
   const { token, hydrated } = useAuthStore();
 

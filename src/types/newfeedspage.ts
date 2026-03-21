@@ -68,3 +68,26 @@ export interface PostComposerModalProps {
   onRemoveImage: (index: number) => void;
   onSubmit: () => void;
 }
+
+export interface DotIndicatorProps {
+  count: number;
+  activeIndex: number;
+  onSelect: (index: number) => void;
+  activeDotColor?: string;
+  inactiveDotColor?: string;
+  stopPropagation?: boolean;
+}
+
+export interface ImagePickerProps {
+  imageCount: number;
+  onImageSelect: (files: FileList | null) => void;
+  iconClassName?: string;
+}
+
+export interface LikeButtonProps {
+  liked: boolean;
+  likes: number;
+  loading: boolean;
+  animating: boolean;
+  onClick: () => void;
+}

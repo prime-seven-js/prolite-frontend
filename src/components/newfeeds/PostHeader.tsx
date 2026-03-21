@@ -1,9 +1,17 @@
-// Lib
 import { timeAgo } from "@/lib/converttime";
-// Type
 import type { PostHeaderProps } from "@/types/newfeedspage";
 
-export function PostHeader({ username, timestamp, size = "base" }: PostHeaderProps) {
+/**
+ * Header chung của các bài posts.
+ * Lib:
+ * - timeAgo → Convert timestamp thành UTC+7 rồi lấy khoảng thời gian. 
+ */
+
+export function PostHeader({
+  username,
+  timestamp,
+  size = "base",
+}: PostHeaderProps) {
   const isSmall = size === "sm";
   // Username + Time
   return (

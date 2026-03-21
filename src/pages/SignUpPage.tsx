@@ -1,11 +1,11 @@
-import { SignupForm } from "@/components/auth/signup-form"
+import { SignupForm } from "@/components/auth/signup-form";
 
 export default function SignUpPage() {
-    return (
-        <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10 overflow-y-auto absolute inset-0 z-0 bg-gradient-blue dark">
-            <div className="w-full max-w-sm md:max-w-4xl">
-                <SignupForm />
-            </div>
-        </div>
-    )
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10 overflow-y-auto absolute inset-0 z-0 bg-gradient-blue dark">
+      <div className="w-full max-w-sm md:max-w-4xl">
+        <SignupForm />
+      </div>
+    </div>
+  );
 }

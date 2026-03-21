@@ -1,5 +1,9 @@
-import { useAuthStore } from '@/stores/useAuthStore'
-import { Navigate, Outlet } from 'react-router';
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Navigate, Outlet } from "react-router";
+
+/**
+  * UnAuth Route - Tự động điều hướng đến SignInPage nếu chưa đăng nhập
+ */
 
 const UnAuthRoute = () => {
   const { token, hydrated } = useAuthStore();
@@ -9,14 +13,10 @@ const UnAuthRoute = () => {
   }
 
   if (token) {
-    return (
-      <Navigate to="/" replace />
-    )
+    return <Navigate to="/" replace />;
   }
 
-  return (
-    <Outlet />
-  )
-}
+  return <Outlet />;
+};
 
-export default UnAuthRoute
+export default UnAuthRoute;

@@ -1,19 +1,24 @@
-// Icons
 import { Bell, Search, Home, LogOut, Plus } from "lucide-react";
-// Shadcn
 import { Button } from "@/components/ui/button";
-// React-router Hook & Global state
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
-// Type
 import type { MobileBottomNavProps } from "@/types/pagelayout";
 
-export function MobileBottomNav({ activePath, onOpenComposer }: MobileBottomNavProps) {
-  // Use React-router Hook
-  const navigate = useNavigate();
-  // Global state
+/** 
+ * Thanh điều hướng trên điện thoại.
+ * Global State:
+ * - useAuthStore → Lưu trữ state liên quan đến Auth.
+*/
+
+export function MobileBottomNav({
+  activePath,
+  onOpenComposer,
+}: MobileBottomNavProps) {
+  // Gọi các phương thức của useAuthStore() và useNavigate().
   const { signOut } = useAuthStore();
-  // Check whether the current page is active or not
+  const navigate = useNavigate();
+
+  // Kiểm tra hiện tại trang nào đang được chọn.
   const iconClass = (path: string) =>
     activePath === path
       ? "text-[#63d4f7] rounded-full"
@@ -22,7 +27,7 @@ export function MobileBottomNav({ activePath, onOpenComposer }: MobileBottomNavP
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass-header z-50 border-t border-white/6">
       <div className="flex items-center justify-around py-2">
-        {/* Mobile bottom navigation items */}
+        {/* Các mục ở thanh điều hướng */}
         <Button
           variant="ghost"
           size="icon"
@@ -55,11 +60,7 @@ export function MobileBottomNav({ activePath, onOpenComposer }: MobileBottomNavP
           <Bell className="w-6 h-6" />
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#2496d4]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={signOut}
-        >
+        <Button variant="ghost" size="icon" onClick={signOut}>
           <LogOut className="w-6 h-6" />
         </Button>
       </div>

@@ -1,14 +1,13 @@
-// AI 90% :(
-// React Hooks
 import { useEffect, useRef, useState } from "react";
-// Icons
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-// Component
-import { DotIndicator } from "@/components/newfeed/DotIndicator";
-// Type
+import { DotIndicator } from "@/components/newfeeds/DotIndicator";
 import type { PostImageGridProps } from "@/types/newfeedspage";
 
-// Adjust height of the image based on the location "feed" or "composer"
+/**
+ * Khuôn ảnh của các bài posts (Shout out to Codex =))).
+ */
+
+// Tách chiều cao slider theo ngữ cảnh dùng lại để tránh lặp class Tailwind dài.
 const getSliderHeightClassName = (variant: "feed" | "composer") =>
   variant === "composer" ? "h-[240px] sm:h-[280px]" : "h-[360px] sm:h-[440px]";
 
@@ -25,6 +24,8 @@ export function PostImageGrid({
   const lightboxRef = useRef<HTMLDivElement | null>(null);
 
   const closeLightbox = async () => {
+    // Khi đóng lightbox thì thoát luôn fullscreen nếu đang bật,
+    // để trạng thái UI luôn đồng bộ giữa modal và trình duyệt.
     setIsLightboxOpen(false);
     if (document.fullscreenElement) {
       await document.exitFullscreen().catch(() => {});
@@ -32,6 +33,7 @@ export function PostImageGrid({
   };
 
   useEffect(() => {
+    // Nếu số ảnh giảm đi sau khi xóa ảnh, đảm bảo activeIndex không bị vượt mảng.
     setActiveIndex((currentIndex) => {
       if (imageUrls.length === 0) return 0;
       return Math.min(currentIndex, imageUrls.length - 1);
@@ -40,6 +42,7 @@ export function PostImageGrid({
 
   useEffect(() => {
     if (!isLightboxOpen) return;
+    // Khóa scroll nền khi lightbox mở và hỗ trợ điều hướng bằng bàn phím.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -61,6 +64,8 @@ export function PostImageGrid({
     if (!isLightboxOpen || !canOpenLightbox) return;
     const lightboxElement = lightboxRef.current;
     if (!lightboxElement) return;
+    // Theo dõi trạng thái fullscreen để khi người dùng tự thoát fullscreen
+    // thì lightbox cũng đóng theo, tránh lệch state.
     const syncWithFullscreen = () => {
       if (!document.fullscreenElement) setIsLightboxOpen(false);
     };
@@ -93,6 +98,7 @@ export function PostImageGrid({
         <div
           className={`group relative overflow-hidden bg-[#091727] ${getSliderHeightClassName(variant)}`}
         >
+          {/* Dùng translateX để tạo hiệu ứng slider, mỗi ảnh chiếm đúng 100% chiều rộng. */}
           <div
             className="flex h-full transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -181,6 +187,7 @@ export function PostImageGrid({
 
           <div
             className="relative flex h-screen w-screen items-center justify-center p-4 sm:p-8"
+            // Chặn click nổi bọt để click vào ảnh không làm đóng lightbox.
             onClick={(e) => e.stopPropagation()}
           >
             <PostImage
@@ -248,6 +255,7 @@ function LightboxArrow({
     <button
       type="button"
       onClick={(e) => {
+        // Không cho click vào nút điều hướng làm trigger đóng lightbox ở lớp cha.
         e.stopPropagation();
         onClick();
       }}
@@ -277,6 +285,7 @@ function PostImage({
       src={src}
       alt={`Post attachment ${index + 1}`}
       className={`h-full w-full ${className}`}
+      // lazy + async giúp giảm chi phí tải ảnh trong feed dài.
       loading="lazy"
       decoding="async"
     />

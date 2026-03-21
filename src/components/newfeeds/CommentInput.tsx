@@ -1,11 +1,21 @@
-// Components
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-// Type
 import type { CommentInputProps } from "@/types/newfeedspage";
 
-export function CommentInput({ username, value, onChange, onSubmit, disabled }: CommentInputProps) {
+/**
+ * UI Input của phần Comment.
+ * Global State:
+ * - useAuthStore → Lưu trữ state liên quan đến Auth.
+ */
+
+export function CommentInput({
+  username,
+  value,
+  onChange,
+  onSubmit,
+  disabled,
+}: CommentInputProps) {
   return (
     <div className="flex gap-3 min-w-0">
       <InitialAvatar
@@ -16,7 +26,7 @@ export function CommentInput({ username, value, onChange, onSubmit, disabled }: 
       />
 
       <div className="flex-1 min-w-0">
-        {/* Comment Input */}
+        {/* Textarea cho để nhập Comment */}
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -27,7 +37,7 @@ export function CommentInput({ username, value, onChange, onSubmit, disabled }: 
 
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-xs">Comment directly on this post.</p>
-          {/* Submit Button */}
+          {/* Nút gửi comment */}
           <Button
             size="sm"
             onClick={onSubmit}

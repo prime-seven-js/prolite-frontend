@@ -1,36 +1,38 @@
-// Common layout for all pages in Prolite
-
-// React-router Hook
-import { useNavigate } from "react-router";
-
-// Icons
 import { Home, MessageCircle, Search } from "lucide-react";
-
-// Components from newfeed
+import { useNavigate } from "react-router";
 import { Header } from "@/components/layout/Header";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { Sidebar } from "@/components/layout/Sidebar";
-
-// Types
 import type { NavItem, PageLayoutProps } from "@/types/pagelayout";
 
-export function PageLayout({ username, activePath, children, rightSidebar, onNewPost }: PageLayoutProps) {
-  // Use React-router Hook
+/**
+ * Layout chung cho hầu hết các trang.
+ */
+
+export function PageLayout({
+  username,
+  activePath,
+  children,
+  rightSidebar,
+  onNewPost,
+}: PageLayoutProps) {
+  // Gọi phương thức của useNavigate().
   const navigate = useNavigate();
-  // Navigation items declaration
+
+  // Khai báo các mục trên thanh điều hướng.
   const BASE_NAV_ITEMS: NavItem[] = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Search", path: "/search" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
   ];
 
-  // Check whether the current page is active or not
+  // Kiểm tra hiện tại trang nào đang được chọn.
   const navItems = BASE_NAV_ITEMS.map((item) => ({
     ...item,
     active: item.path === activePath,
   }));
 
-  // If not in home page, the + in navigation will go to Home page. Otherwise, create a new post.
+  // Xử lý việc tạo post mới ở Home, nếu không ở Home sẽ tự động điều hướng đến đó.
   const handleNewPost = onNewPost ?? (() => navigate("/"));
 
   return (
@@ -52,7 +54,7 @@ export function PageLayout({ username, activePath, children, rightSidebar, onNew
         )}
       </div>
       {/* Mobile Navigation */}
-      <MobileBottomNav activePath={activePath} onOpenComposer={handleNewPost}/>
+      <MobileBottomNav activePath={activePath} onOpenComposer={handleNewPost} />
       <div className="lg:hidden h-16" />
     </div>
   );

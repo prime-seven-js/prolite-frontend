@@ -1,18 +1,25 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
-import SignUpPage from "./pages/SignUpPage";
-import SignInPage from "./pages/SignInPage";
-import NewFeedsPage from "./pages/NewFeedsPage";
 import UnAuthRoute from "./components/UnAuthRoute";
 import AuthRoute from "./components/AuthRoute";
-import NotificationsPage from "./pages/NotificationsPage";
-import ProfilePage from "./pages/ProfilePage";
-import MessagesPage from "./pages/MessagesPage";
-import SearchPage from "./pages/SearchPage";
+import InvalidRoute from "./components/InvalidRoute";
+
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const SignInPage = lazy(() => import("./pages/SignInPage"));
+const NewFeedsPage = lazy(() => import("./pages/NewFeedsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const MessagesPage = lazy(() => import("./pages/MessagesPage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+
+function RouteFallback() {
+  return <div className="min-h-screen bg-gradient-blue" />;
+}
 
 function App() {
   return (
-    <>
-      <BrowserRouter>
+    <BrowserRouter>
+      <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Unauth */}
           <Route element={<UnAuthRoute />}>
@@ -27,10 +34,10 @@ function App() {
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
           </Route>
-          {/* Public */}
+          <Route path="*" element={<InvalidRoute />} />
         </Routes>
-      </BrowserRouter>
-    </>
+      </Suspense>
+    </BrowserRouter>
   );
 }
 

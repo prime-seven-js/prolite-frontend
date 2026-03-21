@@ -47,7 +47,7 @@ export function CommentItem({
           )}
         </div>
         {/* Comment Content */}
-        <p className="mt-1 text-sm leading-relaxed text-gray-300 wrap-anywhere">
+        <p className="mt-1 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap wrap-anywhere">
           {comment.content}
         </p>
       </div>

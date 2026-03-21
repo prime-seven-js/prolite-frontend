@@ -158,7 +158,7 @@ export function PostCard({
 
           {/* Post content text */}
           {post.content && (
-            <p className="mt-1 text-[15px] leading-relaxed text-gray-100 wrap-anywhere">
+            <p className="mt-1 text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap wrap-anywhere">
               {post.content}
             </p>
           )}

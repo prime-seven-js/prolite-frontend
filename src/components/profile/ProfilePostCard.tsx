@@ -22,7 +22,7 @@ const ProfilePostCard = ({ post, index }: { post: Post; index: number }) => {
                         username={post.users.username}
                         timestamp={post.created_at}
                     />
-                    <p className="text-[15px] leading-relaxed mt-1 text-gray-100">
+                    <p className="text-[15px] leading-relaxed mt-1 text-gray-100 whitespace-pre-wrap wrap-anywhere">
                         {post.content}
                     </p>
                     <PostImageGrid imageUrls={post.image_urls} />

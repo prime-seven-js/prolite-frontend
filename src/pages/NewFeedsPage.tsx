@@ -9,6 +9,7 @@ import { useCreatePost } from "@/hooks/usePosts";
 import { useUserLookup } from "@/hooks/useUserLookup";
 import { useRef, useState } from "react";
 import { type Dispatch, type SetStateAction } from "react"
+import { useRealtimePost } from "@/hooks/useRealtimePost";
 
 /**
  * Trang NewFeedsPage của Prolite.
@@ -43,6 +44,8 @@ const NewFeedsPage = () => {
   );
   const [modalImageError, setModalImageError] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
+
+  useRealtimePost();
 
   // Tạo post mới qua mutation.
   const createPost = async (postContent: string, imageUrls: string[]) => {

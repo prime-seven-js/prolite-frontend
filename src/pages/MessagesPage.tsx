@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  MessageCircle,
-  Send,
-  Search,
-  ArrowLeft,
-  Users,
-} from "lucide-react";
+import { MessageCircle, Send, Search, ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,53 +8,65 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useGlobalStore } from "@/stores/useGlobalStore";
-import { useMessageStore } from "@/stores/useMessageStore";
+// TanStack Query hooks — thay thế useMessageStore và useGlobalStore
+import { useAllUsers } from "@/hooks/useAllUsers";
+import {
+  useConversations,
+  useMessages,
+  useSendMessage,
+  useCreateConversation,
+} from "@/hooks/useConversations";
+// Supabase Realtime — nhận message mới qua WebSocket
 
 import { timeAgo } from "@/lib/converttime";
 // Custom Hooks
 import { useUserLookup } from "@/hooks/useUserLookup";
-import { useInitData } from "@/hooks/useInitData";
 
-// ═══════════════════════════════════════════════════════════════
-//  MESSAGES PAGE
-// ═══════════════════════════════════════════════════════════════
 const MessagesPage = () => {
+  // Auth state
   const user = useAuthStore((s) => s.user);
-  const usersData = useGlobalStore((s) => s.usersData);
-  const fetchAllUsersData = useGlobalStore((s) => s.fetchAllUsersData);
-  const conversations = useMessageStore((s) => s.conversations);
-  const activeConversationId = useMessageStore((s) => s.activeConversationId);
-  const messages = useMessageStore((s) => s.messages);
-  const loading = useMessageStore((s) => s.loading);
-  const fetchConversations = useMessageStore((s) => s.fetchConversations);
-  const setActiveConversation = useMessageStore((s) => s.setActiveConversation);
-  const sendMessage = useMessageStore((s) => s.sendMessage);
-  const createConversation = useMessageStore((s) => s.createConversation);
 
+  // Server state — TanStack Query
+  const { data: usersData = [] } = useAllUsers();
+  const { data: conversations = [] } = useConversations();
+  const sendMessageMutation = useSendMessage();
+  const createConversationMutation = useCreateConversation();
+
+  // UI state — local (không phải server state)
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewChat, setShowNewChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Build user lookup
+  // Messages cho conversation đang active — chỉ fetch khi có conversationId
+  const { data: messages = [], isLoading: loading } =
+    useMessages(activeConversationId);
+
+  // Realtime — nhận message mới qua WebSocket, tự append vào cache
+
+  // Build user lookup table
   const userLookup = useUserLookup();
 
-  useInitData(fetchConversations, fetchAllUsersData);
-
-  // Auto-scroll to newest message
+  // Auto-scroll xuống message mới nhất khi messages thay đổi
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 
+  /** Gửi tin nhắn — dùng mutation, clear input ngay lập tức */
   const handleSendMessage = async () => {
     const trimmed = messageInput.trim();
     if (!trimmed || !activeConversationId) return;
     setMessageInput("");
-    await sendMessage(activeConversationId, trimmed);
+    await sendMessageMutation.mutateAsync({
+      conversationId: activeConversationId,
+      content: trimmed,
+    });
   };
 
+  /** Enter gửi tin nhắn, Shift+Enter xuống dòng */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -68,28 +74,34 @@ const MessagesPage = () => {
     }
   };
 
+  /** Tạo conversation mới và chuyển sang conversation đó */
   const handleStartConversation = async (targetUserId: string) => {
     try {
-      const convId = await createConversation([targetUserId]);
-      await setActiveConversation(convId);
+      const convId = await createConversationMutation.mutateAsync([
+        targetUserId,
+      ]);
+      setActiveConversationId(convId);
       setShowNewChat(false);
     } catch (err) {
       console.log("Failed to create conversation", err);
     }
   };
 
-  // Filter users for new chat
+  // Lọc users cho new chat — loại bỏ current user, filter theo search query
   const filteredUsers = useMemo(() => {
     if (!user) return [];
     return usersData
       .filter((u) => u.user_id !== user.user_id)
       .filter((u) =>
-        searchQuery ? u.username.toLowerCase().includes(searchQuery.toLowerCase()) : true,
+        searchQuery
+          ? u.username.toLowerCase().includes(searchQuery.toLowerCase())
+          : true,
       );
   }, [usersData, user, searchQuery]);
 
   if (!user) return <div className="min-h-screen bg-gradient-blue" />;
 
+  // Right sidebar — online friends (placeholder)
   const rightSidebar = (
     <Card className="glass-card border-0 rounded-2xl py-0">
       <CardHeader className="p-5 pb-0">
@@ -105,9 +117,13 @@ const MessagesPage = () => {
   );
 
   return (
-    <PageLayout username={user.username} activePath="/messages" rightSidebar={rightSidebar}>
+    <PageLayout
+      username={user.username}
+      activePath="/messages"
+      rightSidebar={rightSidebar}
+    >
       <div className="flex h-[calc(100vh-3.5rem)]">
-        {/* Conversation List (Left Panel) */}
+        {/* ── Conversation List (Left Panel) ── */}
         <div
           className={`w-full md:w-80 md:shrink-0 border-r border-white/4 flex flex-col ${
             activeConversationId ? "hidden md:flex" : "flex"
@@ -127,7 +143,7 @@ const MessagesPage = () => {
                 New
               </Button>
             </div>
-            {/* Search */}
+            {/* Search bar */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
@@ -140,22 +156,30 @@ const MessagesPage = () => {
             </div>
           </div>
 
-          {/* New Chat: User List */}
+          {/* New Chat: danh sách users có thể chat */}
           {showNewChat && (
             <div className="border-b border-white/6 px-2 py-2 max-h-60 overflow-y-auto no-scrollbar">
-              <p className="text-xs text-gray-500 px-2 pb-2">Start a conversation with:</p>
+              <p className="text-xs text-gray-500 px-2 pb-2">
+                Start a conversation with:
+              </p>
               {filteredUsers.map((u) => (
                 <button
                   key={u.user_id}
                   onClick={() => void handleStartConversation(u.user_id)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
                 >
-                  <InitialAvatar name={u.username} sizeClassName="w-8 h-8" textClassName="text-xs" />
+                  <InitialAvatar
+                    name={u.username}
+                    sizeClassName="w-8 h-8"
+                    textClassName="text-xs"
+                  />
                   <span className="text-sm font-medium">{u.username}</span>
                 </button>
               ))}
               {filteredUsers.length === 0 && (
-                <p className="text-xs text-gray-600 px-2 py-4 text-center">No users found</p>
+                <p className="text-xs text-gray-600 px-2 py-4 text-center">
+                  No users found
+                </p>
               )}
             </div>
           )}
@@ -174,7 +198,9 @@ const MessagesPage = () => {
                 return (
                   <button
                     key={conv.conversation_id}
-                    onClick={() => void setActiveConversation(conv.conversation_id)}
+                    onClick={() =>
+                      setActiveConversationId(conv.conversation_id)
+                    }
                     className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-white/4 transition-colors text-left ${
                       isActive ? "bg-[#2496d4]/8" : "hover:bg-white/3"
                     }`}
@@ -200,7 +226,7 @@ const MessagesPage = () => {
           </div>
         </div>
 
-        {/* Message Thread (Right Panel) */}
+        {/* ── Message Thread (Right Panel) ── */}
         <div
           className={`flex-1 flex flex-col ${
             activeConversationId ? "flex" : "hidden md:flex"
@@ -213,7 +239,7 @@ const MessagesPage = () => {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => useMessageStore.setState({ activeConversationId: null, messages: [] })}
+                  onClick={() => setActiveConversationId(null)}
                   className="md:hidden rounded-full text-gray-400 hover:text-gray-200"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -241,13 +267,18 @@ const MessagesPage = () => {
                 ) : (
                   messages.map((msg) => {
                     const isMine = msg.sender_id === user.user_id;
-                    const senderName = msg.users?.username ?? userLookup[msg.sender_id]?.username ?? "Unknown";
+                    const senderName =
+                      msg.users?.username ??
+                      userLookup[msg.sender_id]?.username ??
+                      "Unknown";
                     return (
                       <div
                         key={msg.id}
                         className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                       >
-                        <div className={`flex gap-2 max-w-[75%] ${isMine ? "flex-row-reverse" : ""}`}>
+                        <div
+                          className={`flex gap-2 max-w-[75%] ${isMine ? "flex-row-reverse" : ""}`}
+                        >
                           {!isMine && (
                             <InitialAvatar
                               name={senderName}
@@ -258,7 +289,9 @@ const MessagesPage = () => {
                           )}
                           <div>
                             {!isMine && (
-                              <p className="text-xs text-gray-500 mb-1 px-1">{senderName}</p>
+                              <p className="text-xs text-gray-500 mb-1 px-1">
+                                {senderName}
+                              </p>
                             )}
                             <div
                               className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
@@ -269,7 +302,9 @@ const MessagesPage = () => {
                             >
                               {msg.content}
                             </div>
-                            <p className={`text-[10px] text-gray-600 mt-1 px-1 ${isMine ? "text-right" : ""}`}>
+                            <p
+                              className={`text-[10px] text-gray-600 mt-1 px-1 ${isMine ? "text-right" : ""}`}
+                            >
                               {timeAgo(msg.created_at)}
                             </p>
                           </div>
@@ -303,12 +338,14 @@ const MessagesPage = () => {
               </div>
             </>
           ) : (
-            /* No conversation selected */
+            /* No conversation selected — placeholder */
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
               <div className="w-20 h-20 rounded-full bg-linear-to-br from-[#2496d4]/20 to-[#63d4f7]/20 flex items-center justify-center mb-6">
                 <MessageCircle className="w-10 h-10 text-[#63d4f7]/50" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-300 mb-2">Your Messages</h2>
+              <h2 className="text-xl font-semibold text-gray-300 mb-2">
+                Your Messages
+              </h2>
               <p className="text-sm text-gray-500 text-center max-w-xs">
                 Select a conversation or start a new one to begin chatting
               </p>

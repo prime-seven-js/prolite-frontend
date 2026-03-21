@@ -3,9 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-import { PostImageGrid } from "@/components/newfeed/PostImageGrid";
-import { ImagePicker } from "@/components/newfeed/ImagePicker";
+import { PostImageGrid } from "@/components/newfeeds/PostImageGrid";
+import { ImagePicker } from "@/components/newfeeds/ImagePicker";
 import type { PostComposerModalProps } from "@/types/newfeedspage";
+
+/**
+ * Modal Composer đăng post khi bấm vào nút Newpost ở thanh điều hướng.
+ */
 
 export function PostComposerModal({
   isOpen,
@@ -46,7 +50,9 @@ export function PostComposerModal({
 
           <Button
             onClick={onSubmit}
-            disabled={(!content.trim() && imageUrls.length === 0) || isSubmitting}
+            disabled={
+              (!content.trim() && imageUrls.length === 0) || isSubmitting
+            }
             className="btn-gradient z-10 h-auto rounded-full px-5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting ? "Posting..." : "Post"}

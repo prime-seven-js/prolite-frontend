@@ -1,16 +1,28 @@
-// Shadcn
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-// Components 
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
-import { PostImageGrid } from "@/components/newfeed/PostImageGrid";
-import { ImagePicker } from "@/components/newfeed/ImagePicker";
-// Type
+import { PostImageGrid } from "@/components/newfeeds/PostImageGrid";
+import { ImagePicker } from "@/components/newfeeds/ImagePicker";
 import type { PostComposerProps } from "@/types/newfeedspage";
 
-export function PostComposer({ username, content, imageUrls, imageError, isSubmitting, textareaRef, onContentChange, onImageSelect, onRemoveImage, onSubmit }: PostComposerProps) {
+/**
+ * Composer đăng post ở trang chính.
+ */
+
+export function PostComposer({
+  username,
+  content,
+  imageUrls,
+  imageError,
+  isSubmitting,
+  textareaRef,
+  onContentChange,
+  onImageSelect,
+  onRemoveImage,
+  onSubmit,
+}: PostComposerProps) {
   return (
     <Card className="glass-card mb-6 rounded-2xl border-0 py-0">
       <CardContent className="p-4">
@@ -57,7 +69,9 @@ export function PostComposer({ username, content, imageUrls, imageError, isSubmi
               {/* Submit new post */}
               <Button
                 onClick={onSubmit}
-                disabled={(!content.trim() && imageUrls.length === 0) || isSubmitting}
+                disabled={
+                  (!content.trim() && imageUrls.length === 0) || isSubmitting
+                }
                 className="btn-gradient h-auto rounded-full px-5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSubmitting ? "Posting..." : "Post"}

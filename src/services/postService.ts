@@ -69,7 +69,7 @@ const mapPost = (post: RawPost, fallbackUser?: User): Post => ({
   image_urls: mapPostImageUrls(post),
 });
 
-const mapComment = (
+export const mapComment = (
   comment: RawPostComment,
   currentUser: User,
   userLookup: Record<string, { username: string; avatar?: string }>,

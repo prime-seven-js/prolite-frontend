@@ -1,18 +1,23 @@
-// From shadcn
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-// React-router Hook & Global state
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useNavigate } from "react-router";
 import { authService } from "@/services/authService";
 
-// Use zod to validate sign up form
+/** 
+ * Giao diện SignupPage lấy từ Shadcn.
+ * Zod: Dùng để validate form.
+ * Global State:
+ * - useAuthStore → Lưu trữ state liên quan đến Auth.
+*/
+
+// Khai báo Schema để Zod validate form.
 const signupSchema = z.object({
   email: z
     .string()
@@ -33,13 +38,11 @@ const signupSchema = z.object({
 });
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-
-  // Zod variables
+  // Gán Schema của Zod vào useForm() để validate.
   const {
     register,
     handleSubmit,
@@ -49,11 +52,11 @@ export function SignupForm({
     resolver: zodResolver(signupSchema),
   });
 
-  // Use React-router Hook & Global state
+  // Gọi các phương thức của useAuthStore() và useNavigate().
   const { signUp } = useAuthStore();
   const navigate = useNavigate();
 
-  // Navigate to SignInPage when registering successfully
+  // Hàm event khi user submit form.
   const onSubmit = async (data: SignupFormValues) => {
     const email = data.email.trim().toLowerCase();
     const username = data.username.trim();
@@ -68,6 +71,7 @@ export function SignupForm({
         (user) => user.username.toLowerCase() === username.toLowerCase(),
       );
 
+      // Khi mail đã tồn tại trên DB.
       if (emailExists) {
         setError("email", {
           message: "This email is already registered.",
@@ -75,6 +79,7 @@ export function SignupForm({
         return;
       }
 
+      // Khi username đã tồn tại trên DB.
       if (usernameExists) {
         setError("username", {
           message: "This username is already taken.",
@@ -92,8 +97,10 @@ export function SignupForm({
           };
         };
       };
-      const errorMessage = axiosError.response?.data?.error?.toLowerCase() ?? "";
+      const errorMessage =
+        axiosError.response?.data?.error?.toLowerCase() ?? "";
 
+      // Khi mail đã tồn tại trên DB.
       if (errorMessage.includes("email")) {
         setError("email", {
           message: "This email is already registered.",
@@ -101,6 +108,7 @@ export function SignupForm({
         return;
       }
 
+      // Khi username đã tồn tại trên DB.
       if (errorMessage.includes("username")) {
         setError("username", {
           message: "This username is already taken.",
@@ -108,6 +116,7 @@ export function SignupForm({
         return;
       }
 
+      // Lỗi server
       setError("root", {
         message: "Unable to create your account right now. Please try again.",
       });
@@ -118,39 +127,75 @@ export function SignupForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <form
+            className="p-6 md:p-8"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="flex flex-col gap-6">
               {/* Header - Logo */}
               <div className="flex flex-col gap-2 justify-center text-center">
-                <img src="/prolite-logo.svg" alt="Prolite Logo" className="mx-auto w-12 h-auto" />
+                <img
+                  src="/prolite-logo.svg"
+                  alt="Prolite Logo"
+                  className="mx-auto w-12 h-auto"
+                />
                 <h1 className="text-2xl font-bold">Create your account</h1>
-                <p className="text-muted-foreground text-balance">Enter your email below to create your account</p>
+                <p className="text-muted-foreground text-balance">
+                  Enter your email below to create your account
+                </p>
               </div>
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="block text-sm">Email<sup className="text-red-400">*</sup></Label>
-                <Input id="email" placeholder="Email" type="email" {...register("email")} />
+                <Label htmlFor="email" className="block text-sm">
+                  Email<sup className="text-red-400">*</sup>
+                </Label>
+                <Input
+                  id="email"
+                  placeholder="Email"
+                  type="email"
+                  {...register("email")}
+                />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
               </div>
               {/* Username */}
               <div className="space-y-2">
-                <Label htmlFor="username" className="block text-sm">Username<sup className="text-red-400">*</sup></Label>
-                <Input id="username" placeholder="Username" {...register("username")} />
+                <Label htmlFor="username" className="block text-sm">
+                  Username<sup className="text-red-400">*</sup>
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="Username"
+                  {...register("username")}
+                />
                 {errors.username && (
-                  <p className="text-sm text-red-500">{errors.username.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.username.message}
+                  </p>
                 )}
               </div>
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="block text-sm">Password<sup className="text-red-400">*</sup></Label>
-                <Input id="password" placeholder="Password" type="password" {...register("password")} />
+                <Label htmlFor="password" className="block text-sm">
+                  Password<sup className="text-red-400">*</sup>
+                </Label>
+                <Input
+                  id="password"
+                  placeholder="Password"
+                  type="password"
+                  {...register("password")}
+                />
                 {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
-              {errors.root && <p className="text-sm text-red-500">{errors.root.message}</p>}
+              {errors.root && (
+                <p className="text-sm text-red-500">{errors.root.message}</p>
+              )}
               {/* Submit Button */}
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creating account..." : "Create Account"}

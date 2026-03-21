@@ -1,3 +1,9 @@
+/**
+ * Convertime Utilities
+ * - timeAgo → Now - CreatedAt
+ * - formatToVNDate → Format CreatedAt sang VN rồi lấy thời gian theo format DD/MM/YYYY
+ */
+
 export function timeAgo(dateString: string) {
   const date = new Date(dateString + "Z");
 

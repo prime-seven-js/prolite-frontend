@@ -1,24 +1,23 @@
-// Shadcn
-import { Button } from "@/components/ui/button";
-
-// Icons
 import { LogOut, Plus } from "lucide-react";
-
-// React-router Hook & Global state
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-// Type
 import type { SidebarProps } from "@/types/pagelayout";
 
+/**
+ * Sidebar cho UI trên màn hình rộng.
+ * Global State:
+ * - useAuthStore → Lưu trữ state liên quan đến Auth.
+ */
+
 export function Sidebar({ navItems, onNewPost }: SidebarProps) {
-  // Use React-router Hook & Global state
-  const navigate = useNavigate();
+  // Gọi các phương thức của useAuthStore() và useNavigate(). 
   const { signOut } = useAuthStore();
+  const navigate = useNavigate();
 
   return (
     <aside className="hidden lg:flex flex-col justify-between w-64 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] py-6 px-3">
-      {/* Sidebar Items */}
+      {/* Các mục ở trên Sidebar */}
       <nav className="space-y-1">
         {navItems.map((item) => (
           <Button
@@ -37,7 +36,8 @@ export function Sidebar({ navItems, onNewPost }: SidebarProps) {
           variant="ghost"
           className={`nav-glow w-full justify-start gap-3 px-4 py-3 h-auto rounded-xl text-[15px] font-medium text-gray-400 hover:text-red-400`}
         >
-          <LogOut className="w-4 h-4" />Sign Out
+          <LogOut className="w-4 h-4" />
+          Sign Out
         </Button>
         <Button
           onClick={onNewPost}

@@ -1,28 +1,38 @@
-// Components
 import { PageLayout } from "@/components/layout/PageLayout";
-import { PostCard } from "@/components/newfeed/PostCard";
-import { PostComposer } from "@/components/newfeed/PostComposer";
-import { PostComposerModal } from "@/components/newfeed/PostComposerModal";
-// Function from library
+import { PostCard } from "@/components/newfeeds/PostCard";
+import { PostComposer } from "@/components/newfeeds/PostComposer";
+import { PostComposerModal } from "@/components/newfeeds/PostComposerModal";
 import { preparePostImageUrls } from "@/lib/postImages";
-// React Hooks & Global states
-import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useGlobalStore } from "@/stores/useGlobalStore";
-import { usePostService } from "@/stores/usePostStore";
-// Custom Hooks
+import { useAllPosts } from "@/hooks/useAllPosts";
+import { useCreatePost } from "@/hooks/usePosts";
 import { useUserLookup } from "@/hooks/useUserLookup";
-import { useInitData } from "@/hooks/useInitData";
+import { useRef, useState } from "react";
+import { type Dispatch, type SetStateAction } from "react"
+
+/**
+ * Trang NewFeedsPage của Prolite.
+ * Lib:
+ * - preparePostImageUrls (postImages): Chuẩn bị ảnh để đăng lên cùng bài viết.
+ * Global State:
+ * - useAuthStore() → Lưu trữ toàn bộ State liên quan đến Auth.
+ * React Hooks:
+ * - useRef() → Giữ cho components không bị re-render.
+ * Queries:
+ * - useAllPosts() → Fetch danh sách tất cả posts.
+ * Mutations:
+ * - useCreatePost() → Tạo post mới.
+ * - useUserLookup() → Tạo lookup table: user_id → { username, avatar }
+ */
 
 const NewFeedsPage = () => {
-  // Global states
+  // Lấy dữ liệu user hiện tại
   const user = useAuthStore((s) => s.user);
-  const fetchAllUsersData = useGlobalStore((s) => s.fetchAllUsersData);
-  const postsData = usePostService((s) => s.postsData);
-  const fetchAllPostsData = usePostService((s) => s.fetchAllPostsData);
-  const newPost = usePostService((s) => s.newPost);
-
-  // React Hooks
+  // Tự động fetch, cache
+  const { data: postsData = [] } = useAllPosts();
+  const createPostMutation = useCreatePost();
+  const userLookup = useUserLookup();
+  // Local State cho form input
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState("");
   const [modalContent, setModalContent] = useState("");
@@ -33,31 +43,25 @@ const NewFeedsPage = () => {
   );
   const [modalImageError, setModalImageError] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
 
-  // When posts & users data have changes, react will automatically fetch data again
-  useInitData(fetchAllUsersData, fetchAllPostsData);
-
-  // Convert usersData into a object type for accessing to user faster
-  const userLookup = useUserLookup();
-
-  // Create new post 
+  // Tạo post mới qua mutation.
   const createPost = async (postContent: string, imageUrls: string[]) => {
     const trimmed = postContent.trim();
     if ((!trimmed && imageUrls.length === 0) || !user) return false;
     try {
-      setIsSubmittingPost(true);
-      await newPost(trimmed, user, imageUrls);
+      await createPostMutation.mutateAsync({
+        content: trimmed,
+        user,
+        imageUrls,
+      });
       return true;
     } catch (err) {
       console.log("Failed to create post", err);
       return false;
-    } finally {
-      setIsSubmittingPost(false);
     }
   };
 
-  // Display images in post input
+  /// Xử lý chọn ảnh cho post
   const appendImagesToDraft = async (
     files: FileList | null,
     draftImageUrls: string[],
@@ -74,7 +78,7 @@ const NewFeedsPage = () => {
     setDraftImageError(error);
   };
 
-  // Handle posting new post on home page
+  // Đăng post nhanh từ composer trên trang chính
   const handleQuickPost = async () => {
     const created = await createPost(content, selectedImageUrls);
     if (created) {
@@ -85,7 +89,7 @@ const NewFeedsPage = () => {
     }
   };
 
-  // Handle posting new post on composer modal 
+  // Đăng post từ modal composer
   const handleModalPost = async () => {
     const created = await createPost(modalContent, modalImageUrls);
     if (created) {
@@ -96,20 +100,23 @@ const NewFeedsPage = () => {
     }
   };
 
-  // For validating fetching user data.
+  // Guard: chờ auth hydrate xong
   if (!user) return <div className="min-h-screen bg-gradient-blue" />;
 
   return (
-    // Page layout
-    <PageLayout username={user.username} activePath="/" onNewPost={() => setShowComposer(true)} >
+    <PageLayout
+      username={user.username}
+      activePath="/"
+      onNewPost={() => setShowComposer(true)}
+    >
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-0 no-scrollbar">
-        {/* Post Composer */}
+        {/* Post Composer — Form tạo post trên trang chính */}
         <PostComposer
           username={user.username}
           content={content}
           imageUrls={selectedImageUrls}
           imageError={selectedImageError}
-          isSubmitting={isSubmittingPost}
+          isSubmitting={createPostMutation.isPending}
           textareaRef={textareaRef}
           onContentChange={setContent}
           onImageSelect={(files) =>
@@ -127,7 +134,7 @@ const NewFeedsPage = () => {
           onSubmit={() => handleQuickPost()}
         />
 
-        {/* Post data cards */}
+        {/* Danh sách post cards */}
         {postsData.map((post, idx) => (
           <PostCard
             key={post.post_id}
@@ -139,14 +146,14 @@ const NewFeedsPage = () => {
         ))}
       </div>
 
-      {/* Post composer modal */}
+      {/* Modal composer — form tạo post full-screen */}
       <PostComposerModal
         isOpen={showComposer}
         username={user.username}
         content={modalContent}
         imageUrls={modalImageUrls}
         imageError={modalImageError}
-        isSubmitting={isSubmittingPost}
+        isSubmitting={createPostMutation.isPending}
         onClose={() => setShowComposer(false)}
         onContentChange={setModalContent}
         onImageSelect={(files) =>

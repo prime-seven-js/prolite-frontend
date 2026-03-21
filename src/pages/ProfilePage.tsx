@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router";
 import { Edit3, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,57 +6,40 @@ import { Separator } from "@/components/ui/separator";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { authService } from "@/services/authService";
-import type { User } from "@/types/user";
 import { formatToVNDate } from "@/lib/converttime";
-import { usePostService } from "@/stores/usePostStore";
-import { useInitData } from "@/hooks/useInitData";
-import type { Post } from "@/types/post";
-import { PostHeader } from "@/components/newfeed/PostHeader";
-import { PostImageGrid } from "@/components/newfeed/PostImageGrid";
-import { useFriendStore } from "@/stores/useFriendStore";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useAllPosts } from "@/hooks/useAllPosts";
+import { useUserFriends } from "@/hooks/useFriends";
+import ProfilePostCard from "@/components/profile/ProfilePostCard";
 
+/**
+ * Trang Profile — hiển thị thông tin user và danh sách posts của họ.
+ *
+ * Data fetching (TanStack Query):
+ * - useUserProfile(userId) → thông tin user (cache by userId)
+ *   → nếu xem profile mình: dùng data từ auth store (initialData)
+ *   → nếu xem profile người khác: fetch từ API
+ * - useAllPosts() → danh sách tất cả posts (filter client-side theo userId)
+ * - useUserFriends() → danh sách bạn bè (để hiển thị nút Add/Your Friend)
+ */
 const ProfilePage = () => {
   const { userId } = useParams();
-  const user = useAuthStore((s) => (s.user));
-  const fetchAllPostsData = usePostService((s) => (s.fetchAllPostsData));
-  const postsData = usePostService((s) => (s.postsData));
-  const fetchUserFriendData = useFriendStore((s) => (s.fetchUserFriendData))
-  const userFriendData = useFriendStore((s) => (s.userFriendData))
-  
-  const [userData, setUserData] = useState<User | null>(null);
+  const user = useAuthStore((s) => s.user);
+
+  // Server state — TanStack Query
+  const { data: userData, isLoading: profileLoading } = useUserProfile(userId);
+  const { data: postsData = [] } = useAllPosts();
+  const { data: userFriendData = [] } = useUserFriends();
+
+  // UI state — editing bio
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
 
-  useInitData(fetchAllPostsData, fetchUserFriendData);
-
-  useEffect(() => {
-    if (!userId || !user) return;
-
-    // Reset state immediately on userId change to avoid showing stale data
-    const loadProfile = async () => {
-      setUserData(null);
-      setIsEditing(false);
-
-      if (userId === user.user_id) {
-        setUserData(user);
-        setEditBio(user.bio || "");
-      } else {
-        try {
-          const fetched = await authService.fetchUserData(userId);
-          setUserData(fetched);
-          setEditBio(fetched.bio || "");
-        } catch (err) {
-          console.log("Failed to fetch user", err);
-        }
-      }
-    };
-    loadProfile();
-  }, [userId, user]);
-
-
+  // Guard: chờ auth và params
   if (!user || !userId) return <></>;
-  if (!userData) {
+
+  // Loading state — chờ profile data
+  if (profileLoading && !userData) {
     return (
       <PageLayout username={user.username} activePath="/profile">
         <div className="flex items-center justify-center py-20 text-gray-500">
@@ -66,18 +49,19 @@ const ProfilePage = () => {
     );
   }
 
-  const filteredPosts = postsData.filter(post => post.user_id === userId);
+  if (!userData) return <></>;
+
+  // Filter posts của user đang xem profile
+  const filteredPosts = postsData.filter((post) => post.user_id === userId);
 
   const isOwnProfile = userId === user.user_id;
-  const isFriend = userFriendData.some((friend) => friend.user_id === user.user_id);
+  const isFriend = userFriendData.some(
+    (friend) => friend.user_id === user.user_id,
+  );
 
   return (
-    <PageLayout
-      username={user.username}
-      activePath="/profile"
-      rightSidebar=" "
-    >
-      {/* Profile Info */}
+    <PageLayout username={user.username} activePath="/profile" rightSidebar=" ">
+      {/* ── Profile Info ── */}
       <div className="px-4 pb-4 pt-6">
         <div className="flex justify-between items-start mb-3">
           <InitialAvatar
@@ -102,6 +86,7 @@ const ProfilePage = () => {
             <h1 className="text-xl font-bold">{userData?.username}</h1>
           </div>
 
+          {/* Bio — editable cho own profile */}
           {isEditing ? (
             <div className="space-y-2">
               <textarea
@@ -145,41 +130,48 @@ const ProfilePage = () => {
             <span className="text-gray-500 text-sm">
               Created at {formatToVNDate(userData.createdAt || "")}
             </span>
-            {!isOwnProfile && 
-            (isFriend ? ( 
-              <Button
-                size="sm"
-                className="rounded-full text-xs font-semibold btn-gradient gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5" />Add Friend
-              </Button>
-            ) : <Button
-                size="sm"
-                className="rounded-full text-xs font-semibold bg-gradient-primary text-neutral-50 gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5" />Your Friend
-              </Button>)}
+            {/* Nút Add Friend / Your Friend — chỉ hiển thị khi xem profile người khác */}
+            {!isOwnProfile &&
+              (isFriend ? (
+                <Button
+                  size="sm"
+                  className="rounded-full text-xs font-semibold btn-gradient gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Add Friend
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="rounded-full text-xs font-semibold bg-gradient-primary text-neutral-50 gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Your Friend
+                </Button>
+              ))}
           </div>
         </div>
       </div>
 
       <Separator className="bg-white/6" />
 
-      {/* Profile Tabs */}
+      {/* ── Profile Tabs ── */}
       <div className="flex overflow-x-auto no-scrollbar">
         <div
           className={`flex-1 text-center h-auto py-3 text-sm font-medium rounded-none border-b-2 transition-all text-[#63d4f7] border-[#2496d4]`}
         >
-          Posts
+          Posts {filteredPosts.length}
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* ── Tab Content: danh sách posts của user ── */}
       <div className="no-scrollbar">
         {filteredPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
             <p className="text-lg font-medium mb-1">No posts yet.</p>
-            <p className="text-sm">{isOwnProfile ? "Your" : "Their"} posts will appear here.</p>
+            <p className="text-sm">
+              {isOwnProfile ? "Your" : "Their"} posts will appear here.
+            </p>
           </div>
         ) : (
           filteredPosts.map((post, i) => (
@@ -193,26 +185,4 @@ const ProfilePage = () => {
 
 export default ProfilePage;
 
-function ProfilePostCard({ post, index }: { post: Post; index: number }) {
-  return (
-    <div
-      className="border-b border-white/4 px-4 py-4 hover:bg-white/1.5 transition-colors animate-fade-in-up"
-      style={{ animationDelay: `${index * 80}ms` }}
-    >
-      <div className="flex gap-3">
-        <InitialAvatar
-          name={post.users.username}
-          sizeClassName="w-10 h-10"
-          textClassName="text-sm"
-          wrapperClassName="shrink-0 self-start mt-0.5"
-        />
 
-        <div className="flex-1 min-w-0">
-          <PostHeader username={post.users.username} timestamp={post.created_at} />
-          <p className="text-[15px] leading-relaxed mt-1 text-gray-100">{post.content}</p>
-          <PostImageGrid imageUrls={post.image_urls} />
-        </div>
-      </div>
-    </div>
-  );
-}

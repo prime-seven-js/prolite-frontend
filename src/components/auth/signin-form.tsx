@@ -1,18 +1,23 @@
-// From shadcn
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-// React-router Hook & Global state
-import { useNavigate } from "react-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { authService } from "@/services/authService";
 
-// Use zod to validate sign in form
+/** 
+ * Giao diện SigninPage lấy từ Shadcn.
+ * Zod: Dùng để validate form.
+ * Global State:
+ * - useAuthStore → Lưu trữ state liên quan đến Auth.
+*/
+
+// Khai báo Schema để Zod validate form.
 const signinSchema = z.object({
   email: z
     .string()
@@ -27,7 +32,7 @@ export function SigninForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  // Zod Variables
+  // Gán Schema của Zod vào useForm() để validate.
   const {
     register,
     handleSubmit,
@@ -37,10 +42,11 @@ export function SigninForm({
     resolver: zodResolver(signinSchema),
   });
 
-  // Use React-router Hook & Global state
+  // Gọi các phương thức của useAuthStore() và useNavigate().
   const { signIn } = useAuthStore();
   const navigate = useNavigate();
 
+  // Hàm event khi user submit form
   const onSubmit = async (data: SigninFormValues) => {
     const email = data.email.trim().toLowerCase();
     const password = data.password;
@@ -50,7 +56,8 @@ export function SigninForm({
       const userExists = users.some(
         (user) => user.email.toLowerCase() === email,
       );
-
+      
+      // Mail không tồn tại trên DB.
       if (!userExists) {
         setError("email", {
           message: "This email does not exist.",
@@ -67,13 +74,15 @@ export function SigninForm({
         };
       };
 
+      // Đúng mail nhưng sai mật khẩu
       if (axiosError.response?.status === 401) {
         setError("password", {
           message: "Incorrect password.",
         });
         return;
       }
-
+      
+      // Lỗi server
       setError("root", {
         message: "Unable to sign in right now. Please try again.",
       });
@@ -92,27 +101,59 @@ export function SigninForm({
               className="absolute inset-0 h-full w-full object-cover brightness-[0.75]"
             />
           </div>
-          <form className="p-6 md:p-8" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <form
+            className="p-6 md:p-8"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="flex flex-col gap-6">
               {/* Header - Logo */}
               <div className="flex flex-col gap-2 justify-center text-center">
-                <img src="/prolite-logo.svg" alt="Prolite Logo" className="mx-auto w-12 h-auto" />
+                <img
+                  src="/prolite-logo.svg"
+                  alt="Prolite Logo"
+                  className="mx-auto w-12 h-auto"
+                />
                 <h1 className="text-2xl font-bold">Welcome back</h1>
-                <p className="text-muted-foreground text-balance">Login to your Prolite account</p>
+                <p className="text-muted-foreground text-balance">
+                  Login to your Prolite account
+                </p>
               </div>
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="block text-sm">Email<sup className="text-red-400">*</sup></Label>
-                <Input id="email" placeholder="Email" type="email" {...register("email")} />
-                {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                <Label htmlFor="email" className="block text-sm">
+                  Email<sup className="text-red-400">*</sup>
+                </Label>
+                <Input
+                  id="email"
+                  placeholder="Email"
+                  type="email"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="block text-sm">Password<sup className="text-red-400">*</sup></Label>
-                <Input id="password" placeholder="Password" type="password" {...register("password")} />
-                {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                <Label htmlFor="password" className="block text-sm">
+                  Password<sup className="text-red-400">*</sup>
+                </Label>
+                <Input
+                  id="password"
+                  placeholder="Password"
+                  type="password"
+                  {...register("password")}
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-500">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
-              {errors.root && <p className="text-sm text-red-500">{errors.root.message}</p>}
+              {errors.root && (
+                <p className="text-sm text-red-500">{errors.root.message}</p>
+              )}
               {/* Submit Button */}
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Logging in..." : "Login"}

@@ -20,9 +20,9 @@ export interface FriendRequest {
 }
 
 export interface Friend {
-  friendship_id: string,
-  friend_since: string,
-  user_id: string,
-  username: string,
-  avatar: string
+  friendship_id: string;
+  friend_since: string;
+  user_id: string;
+  username: string;
+  avatar: string;
 }

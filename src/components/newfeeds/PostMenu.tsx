@@ -1,14 +1,15 @@
-// React Hook
 import { useState } from "react";
-// Icon
 import { MoreHorizontal } from "lucide-react";
-// Shadcn
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-// Type
 import type { PostMenuProps } from "@/types/newfeedspage";
 
+/**
+ * Menu của khi bấm vào nút ... ở các bài posts 
+ */
+
 export function PostMenu({ loading, onDelete }: PostMenuProps) {
+  // 
   const [showMenu, setShowMenu] = useState(false);
 
   return (

@@ -20,7 +20,7 @@ export function Header({ username }: HeaderProps) {
     <header className="glass-header sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 h-14">
         {/* Logo & Brand Name */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
           <img src="/prolite-logo.svg" alt="Prolite" className="w-8 h-8" />
           <span className="text-lg font-extrabold tracking-wide bg-gradient-primary bg-clip-text text-transparent">
             PROLITE

@@ -17,6 +17,7 @@ import {
   useCreateComment,
   useDeleteComment,
 } from "@/hooks/usePostInteractions";
+import { useRealtimePostInteractions } from "@/hooks/useRealtimePostInteractions";
 import { useNavigate } from "react-router";
 import type { PostCardProps } from "@/types/newfeedspage";
 
@@ -55,6 +56,7 @@ export function PostCard({
   );
 
   // Cập nhật các tương tác theo post_id theo thời gian thực.
+  useRealtimePostInteractions(post.post_id);
 
   // Các mutations thực thi các tương tác với post_id.
   const toggleLikeMutation = useToggleLike(post.post_id, currentUser.user_id);

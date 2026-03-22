@@ -10,10 +10,12 @@ import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { useAuthStore } from "@/stores/useAuthStore";
 // TanStack Query hooks — thay thế useGlobalStore và useFriendStore
 import { useAllUsers } from "@/hooks/useAllUsers";
+import { useUserLookup } from "@/hooks/useUserLookup";
 import { useUserFriends, useSendFriendRequest, usePendingFriendRequests } from "@/hooks/useFriends";
 // React & React-router Hooks
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 /**
  * Trang Search — tìm kiếm users và gửi friend request.
@@ -32,6 +34,7 @@ const SearchPage = () => {
   const { data: userFriendData = [] } = useUserFriends();
   const sendFriendRequestMutation = useSendFriendRequest();
   const { data: pendingRequests = [] } = usePendingFriendRequests();
+  const lookup = useUserLookup();
 
   // UI state
   const [searchParams] = useSearchParams();
@@ -44,10 +47,8 @@ const SearchPage = () => {
   // Auto-fill search input khi navigate với ?user=ID
   useEffect(() => {
     if (highlightedUserId) {
-      const found = usersData.find((u) => u.user_id === highlightedUserId);
-      if (found) {
-        setQuery(found.username);
-      }
+      const found = lookup[highlightedUserId];
+      if (found) setQuery(found.username);
     }
   }, [highlightedUserId, usersData]);
 
@@ -64,7 +65,10 @@ const SearchPage = () => {
   const handleSendFriendRequest = async (userId: string) => {
     try {
       await sendFriendRequestMutation.mutateAsync(userId);
+      const username = lookup[userId].username
+      toast.success(`You have sent a friend quest to ${username}.`)
     } catch (err) {
+      toast.error(`Errors happen while trying to send a friend request.`)
       console.log("Failed to send friend request", err);
     }
   };

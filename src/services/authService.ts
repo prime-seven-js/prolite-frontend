@@ -36,17 +36,24 @@ const normalizeUser = (user: AuthResponseUser | ApiUser): User => ({
         : undefined,
 });
 
+/**
+ * Auth Service — xử lý authentication và user data.
+ * Gồm: đăng ký, đăng nhập, fetch users, fetch user profile.
+ */
 export const authService = {
+  /** Fetch danh sách tất cả users (dùng cho userLookup, search) */
   fetchUsers: async () => {
     const res = await api.get<ApiUser[]>("/users");
     return res.data.map(normalizeUser);
   },
 
+  /** Đăng ký tài khoản mới */
   signUp: async (email: string, username: string, password: string) => {
     const res = await api.post("/register", { email, username, password });
     return res.data;
   },
 
+  /** Đăng nhập → trả về token + user data */
   signIn: async (email: string, password: string) => {
     const res = await api.post<LoginResponse>("/login", { email, password });
     return {
@@ -55,6 +62,7 @@ export const authService = {
     };
   },
 
+  /** Fetch profile data của một user theo ID */
   fetchUserData: async (user_id: string) => {
     const res = await api.get<ApiUser>(`/users/${user_id}`);
     return normalizeUser(res.data);

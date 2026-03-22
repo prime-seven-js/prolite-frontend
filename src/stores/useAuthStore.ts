@@ -1,7 +1,21 @@
 import { authService } from "@/services/authService";
-import type { AuthState } from "@/types/store";
+import type { User } from "@/types/user";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+/** Auth store state — quản lý token, user, và các auth actions */
+interface AuthState {
+  token: string | null;
+  user: User | null;
+  loading: boolean;
+  hydrated: boolean;
+  clearState: () => void;
+  setHydrated: (hydrated: boolean) => void;
+  signUp: (email: string, username: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  fetchUserData: (user_id: string) => Promise<void>;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(

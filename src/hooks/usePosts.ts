@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postService } from "@/services/postService";
+import { toast } from "sonner";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Post } from "@/types/post";
 import type { User } from "@/types/user";
@@ -24,6 +25,7 @@ export function useCreatePost() {
     }) => postService.newPost(content, user, imageUrls),
     onSuccess: (createdPost) => {
       // Thêm post mới vào đầu feed
+      toast.success("You have just created a new post", {position: "bottom-right"});
       queryClient.setQueryData<Post[]>(queryKeys.posts.all, (old) =>
         old ? [createdPost, ...old] : [createdPost],
       );

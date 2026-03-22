@@ -1,55 +1,36 @@
+import { supabase } from "@/lib/supabase";
+
 export const MAX_POST_IMAGES = 4;
 export const MAX_POST_IMAGE_SIZE_MB = 8;
-const MAX_POST_IMAGE_EDGE = 1200;
+export const POST_IMAGES_BUCKET = "posts_images";
 
-const fileToDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+export interface DraftPostImage {
+  file: File;
+  previewUrl: string;
+}
 
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
+const getFileExtension = (file: File) => {
+  const fileNameExtension = file.name.split(".").pop()?.trim().toLowerCase();
+  if (fileNameExtension) return fileNameExtension;
 
-const optimizeImageFile = async (file: File) => {
-  const sourceUrl = await fileToDataUrl(file);
-
-  try {
-    const image = await loadImage(sourceUrl);
-    const longestEdge = Math.max(image.naturalWidth, image.naturalHeight);
-    const scale = Math.min(1, MAX_POST_IMAGE_EDGE / longestEdge);
-    const width = Math.max(1, Math.round(image.naturalWidth * scale));
-    const height = Math.max(1, Math.round(image.naturalHeight * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d");
-    if (!context) {
-      return sourceUrl;
-    }
-
-    context.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL("image/webp", 0.78);
-  } catch {
-    return sourceUrl;
-  }
+  const mimeExtension = file.type.split("/").pop()?.trim().toLowerCase();
+  return mimeExtension || "jpg";
 };
 
-export const preparePostImageUrls = async (
+const buildPostImagePath = (userId: string, file: File) => {
+  const sanitizedUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "-");
+  const extension = getFileExtension(file);
+
+  return `${sanitizedUserId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+};
+
+export const preparePostImages = async (
   files: FileList | null,
   existingCount: number,
 ) => {
   if (!files?.length) {
     return {
-      imageUrls: [],
+      images: [] as DraftPostImage[],
       error: null as string | null,
     };
   }
@@ -57,7 +38,7 @@ export const preparePostImageUrls = async (
   const remainingSlots = Math.max(MAX_POST_IMAGES - existingCount, 0);
   if (remainingSlots === 0) {
     return {
-      imageUrls: [],
+      images: [] as DraftPostImage[],
       error: `You can add up to ${MAX_POST_IMAGES} images per post.`,
     };
   }
@@ -82,7 +63,10 @@ export const preparePostImageUrls = async (
     return true;
   });
 
-  const imageUrls = await Promise.all(validFiles.map(optimizeImageFile));
+  const images = validFiles.map((file) => ({
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }));
 
   if (selectedFiles.length > filesToProcess.length) {
     skippedMessages.push(
@@ -91,7 +75,55 @@ export const preparePostImageUrls = async (
   }
 
   return {
-    imageUrls,
+    images,
     error: skippedMessages[0] ?? null,
   };
+};
+
+export const uploadPostImages = async (
+  userId: string,
+  images: DraftPostImage[],
+) => {
+  const imageUrls: string[] = [];
+  const uploadedPaths: string[] = [];
+
+  try {
+    for (const image of images) {
+      const path = buildPostImagePath(userId, image.file);
+      const { error: uploadError } = await supabase.storage
+        .from("posts_images")
+        .upload(path, image.file, {
+          cacheControl: "3600",
+          contentType: image.file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      uploadedPaths.push(path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(POST_IMAGES_BUCKET).getPublicUrl(path);
+      imageUrls.push(publicUrl);
+    }
+
+    return {
+      imageUrls,
+      uploadedPaths,
+    };
+  } catch (error) {
+    await removeUploadedPostImages(uploadedPaths);
+    throw error;
+  }
+};
+
+export const removeUploadedPostImages = async (paths: string[]) => {
+  if (paths.length === 0) return;
+  await supabase.storage.from(POST_IMAGES_BUCKET).remove(paths);
+};
+
+export const revokeDraftPostImages = (images: DraftPostImage[]) => {
+  images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
 };

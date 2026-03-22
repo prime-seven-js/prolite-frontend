@@ -22,6 +22,7 @@ import ProfilePostCard from "@/components/profile/ProfilePostCard";
  * - useAllPosts() → danh sách tất cả posts (filter client-side theo userId)
  * - useUserFriends() → danh sách bạn bè (để hiển thị nút Add/Your Friend)
  */
+
 const ProfilePage = () => {
   const { userId } = useParams();
   const user = useAuthStore((s) => s.user);

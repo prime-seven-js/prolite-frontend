@@ -2,103 +2,102 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { PostCard } from "@/components/newfeeds/PostCard";
 import { PostComposer } from "@/components/newfeeds/PostComposer";
 import { PostComposerModal } from "@/components/newfeeds/PostComposerModal";
-import { preparePostImageUrls } from "@/lib/postImages";
+import { removeUploadedPostImages, uploadPostImages } from "@/lib/postImages";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAllPosts } from "@/hooks/useAllPosts";
 import { useCreatePost } from "@/hooks/usePosts";
 import { useUserLookup } from "@/hooks/useUserLookup";
+import { useDraftImages } from "@/hooks/useDraftImages";
 import { useRef, useState } from "react";
-import { type Dispatch, type SetStateAction } from "react"
 import { useRealtimePost } from "@/hooks/useRealtimePost";
+import { toast } from "sonner";
 
 /**
- * Trang NewFeedsPage của Prolite.
- * Lib:
- * - preparePostImageUrls (postImages): Chuẩn bị ảnh để đăng lên cùng bài viết.
- * Global State:
- * - useAuthStore() → Lưu trữ toàn bộ State liên quan đến Auth.
- * React Hooks:
- * - useRef() → Giữ cho components không bị re-render.
- * Queries:
- * - useAllPosts() → Fetch danh sách tất cả posts.
- * Mutations:
- * - useCreatePost() → Tạo post mới.
- * - useUserLookup() → Tạo lookup table: user_id → { username, avatar }
+ * Trang NewFeeds — hiển thị danh sách posts + form tạo post mới.
+ *
+ * Data fetching (TanStack Query):
+ * - useAllPosts() → danh sách posts (cache, auto-refetch)
+ * - useCreatePost() → mutation tạo post mới
+ * - useUserLookup() → lookup table user_id → { username, avatar }
+ *
+ * Custom hooks:
+ * - useDraftImages() × 2 → quản lý draft images cho main composer và modal
+ * - useRealtimePost() → realtime subscription cho posts
  */
-
 const NewFeedsPage = () => {
-  // Lấy dữ liệu user hiện tại
+  // Auth state
   const user = useAuthStore((s) => s.user);
-  // Tự động fetch, cache
+
+  // Server state — TanStack Query
   const { data: postsData = [] } = useAllPosts();
   const createPostMutation = useCreatePost();
   const userLookup = useUserLookup();
-  // Local State cho form input
+
+  // Draft images — main composer + modal dùng 2 instances riêng
+  const mainDraft = useDraftImages();
+  const modalDraft = useDraftImages();
+
+  // UI state
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState("");
   const [modalContent, setModalContent] = useState("");
-  const [selectedImageUrls, setSelectedImageUrls] = useState<string[]>([]);
-  const [modalImageUrls, setModalImageUrls] = useState<string[]>([]);
-  const [selectedImageError, setSelectedImageError] = useState<string | null>(
-    null,
-  );
-  const [modalImageError, setModalImageError] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
 
+  // Realtime — lắng nghe posts mới
   useRealtimePost();
 
-  // Tạo post mới qua mutation.
-  const createPost = async (postContent: string, imageUrls: string[]) => {
+  /**
+   * Tạo post mới: rewrite content bằng AI → upload ảnh → gọi mutation.
+   * Rollback: xóa ảnh đã upload nếu mutation fail.
+   */
+  const createPost = async (
+    postContent: string,
+    draft: ReturnType<typeof useDraftImages>,
+  ) => {
     const trimmed = postContent.trim();
-    if ((!trimmed && imageUrls.length === 0) || !user) return false;
+    if ((!trimmed && draft.images.length === 0) || !user) return false;
+    let uploadedPaths: string[] = [];
+
     try {
+      const uploadResult =
+        draft.images.length > 0
+          ? await uploadPostImages(user.user_id, draft.images)
+          : { imageUrls: [], uploadedPaths: [] };
+
+      uploadedPaths = uploadResult.uploadedPaths;
+
       await createPostMutation.mutateAsync({
-        content: trimmed,
+        content,
         user,
-        imageUrls,
+        imageUrls: uploadResult.imageUrls,
       });
+
       return true;
     } catch (err) {
+      // Rollback: xóa ảnh đã upload khi có lỗi
+      toast.error("Error appears while trying to create a new post!")
+      await removeUploadedPostImages(uploadedPaths);
       console.log("Failed to create post", err);
       return false;
     }
   };
 
-  /// Xử lý chọn ảnh cho post
-  const appendImagesToDraft = async (
-    files: FileList | null,
-    draftImageUrls: string[],
-    setDraftImageUrls: Dispatch<SetStateAction<string[]>>,
-    setDraftImageError: Dispatch<SetStateAction<string | null>>,
-  ) => {
-    const { imageUrls, error } = await preparePostImageUrls(
-      files,
-      draftImageUrls.length,
-    );
-    if (imageUrls.length > 0) {
-      setDraftImageUrls((current) => [...current, ...imageUrls]);
-    }
-    setDraftImageError(error);
-  };
-
-  // Đăng post nhanh từ composer trên trang chính
+  /** Đăng post nhanh từ composer trên trang chính */
   const handleQuickPost = async () => {
-    const created = await createPost(content, selectedImageUrls);
+    const created = await createPost(content, mainDraft);
     if (created) {
       setContent("");
-      setSelectedImageUrls([]);
-      setSelectedImageError(null);
+      mainDraft.clearImages();
       textareaRef.current?.focus();
     }
   };
 
-  // Đăng post từ modal composer
+  /** Đăng post từ modal composer */
   const handleModalPost = async () => {
-    const created = await createPost(modalContent, modalImageUrls);
+    const created = await createPost(modalContent, modalDraft);
     if (created) {
       setModalContent("");
-      setModalImageUrls([]);
-      setModalImageError(null);
+      modalDraft.clearImages();
       setShowComposer(false);
     }
   };
@@ -113,27 +112,17 @@ const NewFeedsPage = () => {
       onNewPost={() => setShowComposer(true)}
     >
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-0 no-scrollbar">
-        {/* Post Composer — Form tạo post trên trang chính */}
+        {/* Post Composer — form tạo post trên trang chính */}
         <PostComposer
           username={user.username}
           content={content}
-          imageUrls={selectedImageUrls}
-          imageError={selectedImageError}
+          imageUrls={mainDraft.previewUrls}
+          imageError={mainDraft.imageError}
           isSubmitting={createPostMutation.isPending}
           textareaRef={textareaRef}
           onContentChange={setContent}
-          onImageSelect={(files) =>
-            appendImagesToDraft(
-              files,
-              selectedImageUrls,
-              setSelectedImageUrls,
-              setSelectedImageError,
-            )
-          }
-          onRemoveImage={(index) => {
-            setSelectedImageUrls((imgs) => imgs.filter((_, i) => i !== index));
-            setSelectedImageError(null);
-          }}
+          onImageSelect={(files) => mainDraft.appendImages(files)}
+          onRemoveImage={(index) => mainDraft.removeImage(index)}
           onSubmit={() => handleQuickPost()}
         />
 
@@ -154,23 +143,13 @@ const NewFeedsPage = () => {
         isOpen={showComposer}
         username={user.username}
         content={modalContent}
-        imageUrls={modalImageUrls}
-        imageError={modalImageError}
+        imageUrls={modalDraft.previewUrls}
+        imageError={modalDraft.imageError}
         isSubmitting={createPostMutation.isPending}
         onClose={() => setShowComposer(false)}
         onContentChange={setModalContent}
-        onImageSelect={(files) =>
-          appendImagesToDraft(
-            files,
-            modalImageUrls,
-            setModalImageUrls,
-            setModalImageError,
-          )
-        }
-        onRemoveImage={(index) => {
-          setModalImageUrls((imgs) => imgs.filter((_, i) => i !== index));
-          setModalImageError(null);
-        }}
+        onImageSelect={(files) => modalDraft.appendImages(files)}
+        onRemoveImage={(index) => modalDraft.removeImage(index)}
         onSubmit={() => handleModalPost()}
       />
     </PageLayout>

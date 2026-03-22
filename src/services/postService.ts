@@ -6,6 +6,7 @@ import type {
   PostLikeSummary,
 } from "@/types/post";
 import type { User } from "@/types/user";
+import { aiService } from "./aiService";
 
 type RawUserSummary =
   | {
@@ -46,6 +47,7 @@ type RawPostLike = {
   users?: RawUserSummary;
 };
 
+/** Map raw post_images/image_urls → sorted array of public URLs */
 const mapPostImageUrls = (post: RawPost): string[] => {
   if (post.post_images?.length) {
     return [...post.post_images]
@@ -56,6 +58,7 @@ const mapPostImageUrls = (post: RawPost): string[] => {
   return post.image_urls?.filter(Boolean) ?? [];
 };
 
+/** Map raw post response → typed Post (normalize nulls, fallback user) */
 const mapPost = (post: RawPost, fallbackUser?: User): Post => ({
   post_id: post.post_id,
   user_id: post.user_id,
@@ -69,6 +72,7 @@ const mapPost = (post: RawPost, fallbackUser?: User): Post => ({
   image_urls: mapPostImageUrls(post),
 });
 
+/** Map raw comment → typed PostComment (resolve username from lookup) */
 export const mapComment = (
   comment: RawPostComment,
   currentUser: User,
@@ -94,6 +98,7 @@ export const mapComment = (
   };
 };
 
+/** Map raw like → typed PostLike */
 const mapPostLike = (like: RawPostLike): PostLike => ({
   user_id: like.user_id,
   user: {
@@ -102,6 +107,7 @@ const mapPostLike = (like: RawPostLike): PostLike => ({
   },
 });
 
+/** Fetch like summary + kiểm tra current user đã like chưa */
 const fetchPostLikesSummary = async (
   post_id: string,
   currentUserId: string,
@@ -116,6 +122,9 @@ const fetchPostLikesSummary = async (
   };
 };
 
+/**
+ * Post Service — CRUD posts, likes, comments.
+ */
 export const postService = {
   fetchAllPostsData: async () => {
     const res = await api.get<RawPost[]>("/posts");
@@ -123,9 +132,10 @@ export const postService = {
   },
 
   newPost: async (content: string, user: User, image_urls?: string[]) => {
+    const aiContent = (await aiService.rewriteWithAI(content)).data;
     const res = await api.post<RawPost>("/protected/posts", {
-      content,
-      title: content.trim().slice(0, 80) || null,
+      content: aiContent,
+      title: aiContent.trim().slice(0, 80) || null,
       image_urls: image_urls ?? [],
     });
     const post = mapPost(res.data, user);

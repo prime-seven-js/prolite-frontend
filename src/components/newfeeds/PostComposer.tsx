@@ -13,6 +13,7 @@ import type { PostComposerProps } from "@/types/newfeedspage";
 
 export function PostComposer({
   username,
+  avatarUrl,
   content,
   imageUrls,
   imageError,
@@ -30,6 +31,7 @@ export function PostComposer({
           {/* Initial avatar */}
           <InitialAvatar
             name={username}
+            avatarUrl={avatarUrl}
             sizeClassName="h-10 w-10"
             textClassName="text-sm"
             wrapperClassName="mt-0.5 shrink-0 self-start"

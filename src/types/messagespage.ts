@@ -12,6 +12,10 @@ export interface ConversationListProps {
   showNewChat: boolean;
   onToggleNewChat: () => void;
   newChatPanel: ReactNode;
+  /** Lookup table user_id → { username, avatar } — dùng để resolve participant info */
+  userLookup: UserLookup;
+  /** ID của current user — dùng để lọc ra participant còn lại */
+  currentUserId: string;
 }
 
 /** Props cho ConversationListHeader — header + search */
@@ -38,6 +42,10 @@ export interface MessageThreadProps {
   onMessageInputChange: (value: string) => void;
   onSendMessage: () => void;
   onBack: () => void;
+  /** Tên participant đang chat — hiển thị trên thread header */
+  participantName?: string;
+  /** Avatar participant đang chat */
+  participantAvatar?: string;
 }
 
 /** Props cho MessageBubble — một tin nhắn */
@@ -45,6 +53,7 @@ export interface MessageBubbleProps {
   message: Message;
   isMine: boolean;
   senderName: string;
+  senderAvatar?: string;
 }
 
 /** Props cho MessageInput — ô nhập + gửi tin nhắn */

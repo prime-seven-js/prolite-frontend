@@ -29,6 +29,7 @@ const NotificationsContent = ({ activeFilter, pendingRequests, loading, filtered
                         >
                             <InitialAvatar
                                 name={req.users.username}
+                                avatarUrl={req.users.avatar}
                                 sizeClassName="w-10 h-10"
                                 textClassName="text-sm"
                             />

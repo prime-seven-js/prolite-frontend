@@ -8,6 +8,7 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 // Auth state
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { User } from "@/types/user";
 // TanStack Query hooks — thay thế useGlobalStore và useFriendStore
 import { useAllUsers } from "@/hooks/useAllUsers";
 import { useUserLookup } from "@/hooks/useUserLookup";
@@ -55,9 +56,9 @@ const SearchPage = () => {
   // Loại bỏ current user và lọc theo search query
   const filteredUsers = useMemo(() => {
     if (!user) return [];
-    const others = usersData.filter((u) => u.user_id !== user.user_id);
+    const others = usersData.filter((u: User) => u.user_id !== user.user_id);
     if (!query.trim()) return others;
-    return others.filter((u) =>
+    return others.filter((u: User) =>
       u.username.toLowerCase().includes(query.toLowerCase()),
     );
   }, [usersData, user, query]);

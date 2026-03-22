@@ -13,7 +13,7 @@ const ConversationListHeader = ({
   onToggleNewChat,
 }: ConversationListHeaderProps) => {
   return (
-    <div className="sticky top-0 z-10 glass-header px-4 py-3">
+    <div className="shrink-0 z-10 glass-header px-4 py-3">
       {/* Title + nút New */}
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-lg font-bold">Messages</h1>

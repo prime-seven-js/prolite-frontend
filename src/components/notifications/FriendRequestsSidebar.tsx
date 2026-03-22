@@ -40,6 +40,7 @@ const FriendRequestsSidebar = ({
             <div key={req.id} className="flex items-center gap-3">
               <InitialAvatar
                 name={req.users.username}
+                avatarUrl={req.users.avatar}
                 sizeClassName="w-9 h-9"
                 textClassName="text-xs"
               />

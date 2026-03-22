@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageLayout } from "@/components/layout/PageLayout";
 
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { User } from "@/types/user";
 // TanStack Query hooks
 import { useAllUsers } from "@/hooks/useAllUsers";
 import {
@@ -15,6 +16,10 @@ import {
 } from "@/hooks/useConversations";
 import { useUserLookup } from "@/hooks/useUserLookup";
 
+// Realtime hooks — Supabase Realtime subscriptions
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
+import { useRealtimeConversations } from "@/hooks/useRealtimeConversations";
+
 // Components tách ra từ MessagesPage
 import ConversationList from "@/components/messages/ConversationList";
 import NewChatPanel from "@/components/messages/NewChatPanel";
@@ -22,7 +27,7 @@ import MessageThread from "@/components/messages/MessageThread";
 import EmptyConversation from "@/components/messages/EmptyConversation";
 
 /**
- * Trang Messages — giao diện chat.
+ * Trang Messages — giao diện chat với Supabase Realtime.
  *
  * Cấu trúc:
  * ┌─────────────────────┬────────────────────────┐
@@ -37,6 +42,11 @@ import EmptyConversation from "@/components/messages/EmptyConversation";
  * - useMessages(id) → messages của conversation đang active
  * - useAllUsers() → danh sách users (cho new chat)
  * - useUserLookup() → lookup table user_id → username
+ *
+ * Realtime (Supabase):
+ * - useRealtimeMessages(id) → subscribe messages INSERT cho conversation đang active
+ * - useRealtimeConversations() → subscribe messages + conversation_participants INSERT
+ *   để tự động cập nhật conversation list
  */
 const MessagesPage = () => {
   // Auth state
@@ -62,6 +72,12 @@ const MessagesPage = () => {
 
   // Build user lookup table
   const userLookup = useUserLookup();
+
+  // ━━━ Realtime Subscriptions ━━━
+  // Subscribe tin nhắn mới cho conversation đang active → auto-append vào cache
+  useRealtimeMessages(activeConversationId);
+  // Subscribe conversation list → auto-refresh khi có conversation/message mới
+  useRealtimeConversations();
 
   /** Gửi tin nhắn — dùng mutation, clear input ngay lập tức */
   const handleSendMessage = async () => {
@@ -91,13 +107,42 @@ const MessagesPage = () => {
   const filteredUsers = useMemo(() => {
     if (!user) return [];
     return usersData
-      .filter((u) => u.user_id !== user.user_id)
-      .filter((u) =>
+      .filter((u: User) => u.user_id !== user.user_id)
+      .filter((u: User) =>
         searchQuery
           ? u.username.toLowerCase().includes(searchQuery.toLowerCase())
           : true,
       );
   }, [usersData, user, searchQuery]);
+
+  /**
+   * Tính participantName + participantAvatar cho conversation đang active.
+   * Dùng participants data nếu có, fallback dùng userLookup.
+   */
+  const activeParticipant = useMemo(() => {
+    if (!activeConversationId || !user) return { name: "Conversation", avatar: undefined };
+
+    const activeConv = conversations.find(
+      (c) => c.conversation_id === activeConversationId,
+    );
+
+    // Ưu tiên dùng participants từ Conversation type
+    if (activeConv?.participants) {
+      const other = activeConv.participants.find(
+        (p) => p.user_id !== user.user_id,
+      );
+      if (other) return { name: other.username, avatar: other.avatar };
+    }
+
+    // Fallback: tìm participant khác qua messages
+    const otherMsg = messages.find((m) => m.sender_id !== user.user_id);
+    if (otherMsg) {
+      const lookup = userLookup[otherMsg.sender_id];
+      if (lookup) return { name: lookup.username, avatar: lookup.avatar };
+    }
+
+    return { name: "Conversation", avatar: undefined };
+  }, [activeConversationId, conversations, messages, user, userLookup]);
 
   if (!user) return <div className="min-h-screen bg-gradient-blue" />;
 
@@ -122,7 +167,7 @@ const MessagesPage = () => {
       activePath="/messages"
       rightSidebar={rightSidebar}
     >
-      <div className="flex h-[calc(100vh-3.5rem)]">
+      <div className="flex h-[calc(100vh-3.5rem-4rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden">
         {/* Sidebar trái — danh sách conversations */}
         <ConversationList
           conversations={conversations}
@@ -138,6 +183,8 @@ const MessagesPage = () => {
               onStartConversation={(id) => void handleStartConversation(id)}
             />
           }
+          userLookup={userLookup}
+          currentUserId={user.user_id}
         />
 
         {/* Panel phải — thread chat hoặc empty state */}
@@ -156,11 +203,11 @@ const MessagesPage = () => {
               onMessageInputChange={setMessageInput}
               onSendMessage={() => void handleSendMessage()}
               onBack={() => setActiveConversationId(null)}
+              participantName={activeParticipant.name}
+              participantAvatar={activeParticipant.avatar}
             />
           ) : (
-            <EmptyConversation
-              onStartNewChat={() => setShowNewChat(true)}
-            />
+            <EmptyConversation onStartNewChat={() => setShowNewChat(true)} />
           )}
         </div>
       </div>

@@ -17,6 +17,7 @@ export function CommentItem({
     <div className="flex gap-3">
       <InitialAvatar
         name={comment.user.username}
+        avatarUrl={comment.user.avatar}
         sizeClassName="w-8 h-8"
         textClassName="text-xs"
         wrapperClassName="shrink-0 self-start"

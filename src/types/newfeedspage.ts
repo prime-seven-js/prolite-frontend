@@ -4,6 +4,7 @@ import type { User, UserLookup } from "@/types/user";
 
 export interface PostComposerProps {
   username: string;
+  avatarUrl?: string;
   content: string;
   imageUrls: string[];
   imageError: string | null;
@@ -49,6 +50,7 @@ export interface CommentItemProps {
 
 export interface CommentInputProps {
   username: string;
+  avatarUrl?: string;
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
@@ -58,6 +60,7 @@ export interface CommentInputProps {
 export interface PostComposerModalProps {
   isOpen: boolean;
   username: string;
+  avatarUrl?: string;
   content: string;
   imageUrls: string[];
   imageError: string | null;

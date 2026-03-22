@@ -14,6 +14,7 @@ import type { PostComposerModalProps } from "@/types/newfeedspage";
 export function PostComposerModal({
   isOpen,
   username,
+  avatarUrl,
   content,
   imageUrls,
   imageError,
@@ -65,6 +66,7 @@ export function PostComposerModal({
           <div className="flex min-w-0 gap-3">
             <InitialAvatar
               name={username}
+              avatarUrl={avatarUrl}
               sizeClassName="h-10 w-10"
               textClassName="text-sm"
               wrapperClassName="shrink-0 self-start"

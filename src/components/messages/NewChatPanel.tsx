@@ -20,6 +20,7 @@ const NewChatPanel = ({ users, onStartConversation }: NewChatPanelProps) => {
         >
           <InitialAvatar
             name={u.username}
+            avatarUrl={u.avatar}
             sizeClassName="w-8 h-8"
             textClassName="text-xs"
           />

@@ -8,7 +8,7 @@ import { PostMenu } from "@/components/newfeeds/PostMenu";
 import { LikeButton } from "@/components/newfeeds/LikeButton";
 import { CommentItem } from "@/components/newfeeds/CommentItem";
 import { CommentInput } from "@/components/newfeeds/CommentInput";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDeletePost } from "@/hooks/usePosts";
 import {
   usePostLikes,
@@ -48,11 +48,24 @@ export function PostCard({
     post.post_id,
     currentUser.user_id,
   );
-  // Tự động fetch danh sách comments
-  const { data: comments = [], isLoading: commentLoading } = usePostComments(
+  // Tự động fetch danh sách comments (raw data, chưa resolve username)
+  const { data: rawComments = [], isLoading: commentLoading } = usePostComments(
     post.post_id,
-    currentUser,
-    userLookup,
+  );
+
+  // Resolve username tại render time từ userLookup — tránh race condition
+  // khi userLookup chưa sẵn sàng lúc comments được fetch lần đầu.
+  const comments = useMemo(
+    () =>
+      rawComments.map((comment) => ({
+        ...comment,
+        user: {
+          username:
+            userLookup[comment.user_id]?.username ?? comment.user.username,
+          avatar: userLookup[comment.user_id]?.avatar ?? comment.user.avatar,
+        },
+      })),
+    [rawComments, userLookup],
   );
 
   // Cập nhật các tương tác theo post_id theo thời gian thực.
@@ -60,11 +73,7 @@ export function PostCard({
 
   // Các mutations thực thi các tương tác với post_id.
   const toggleLikeMutation = useToggleLike(post.post_id, currentUser.user_id);
-  const createCommentMutation = useCreateComment(
-    post.post_id,
-    currentUser,
-    userLookup,
-  );
+  const createCommentMutation = useCreateComment(post.post_id, currentUser);
   const deleteCommentMutation = useDeleteComment(post.post_id);
   const deletePostMutation = useDeletePost();
 
@@ -134,6 +143,7 @@ export function PostCard({
         >
           <InitialAvatar
             name={post.users.username}
+            avatarUrl={post.users.avatar}
             sizeClassName="w-10 h-10"
             textClassName="text-sm"
             wrapperClassName="shrink-0 self-start mt-0.5"
@@ -215,6 +225,7 @@ export function PostCard({
               {/* Comment input */}
               <CommentInput
                 username={currentUser.username}
+                avatarUrl={currentUser.avatar}
                 value={commentInput}
                 onChange={setCommentInput}
                 onSubmit={handleSubmitComment}

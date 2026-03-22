@@ -16,7 +16,7 @@ const MessageInput = ({ value, onChange, onSend }: MessageInputProps) => {
   };
 
   return (
-    <div className="sticky bottom-0 glass-header border-t border-white/6 px-4 py-3">
+    <div className="shrink-0 glass-header border-t border-white/6 px-4 py-3">
       <div className="flex items-center gap-2">
         <input
           type="text"

@@ -45,6 +45,7 @@ export function Header({ username }: HeaderProps) {
           >
             <InitialAvatar
               name={username}
+              avatarUrl={user?.avatar}
               sizeClassName="w-8 h-8"
               textClassName="text-xs"
             />

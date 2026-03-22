@@ -11,8 +11,8 @@ type ApiUser = {
   user_id: string;
   email: string;
   username: string;
-  avatar?: string | null;
-  bio?: string | null;
+  avatar: string | null;
+  bio: string | null;
   created_at?: string;
   createdAt?: string;
 };
@@ -42,7 +42,7 @@ const normalizeUser = (user: AuthResponseUser | ApiUser): User => ({
  */
 export const authService = {
   /** Fetch danh sách tất cả users (dùng cho userLookup, search) */
-  fetchUsers: async () => {
+  fetchUsers: async (): Promise<User[]> => {
     const res = await api.get<ApiUser[]>("/users");
     return res.data.map(normalizeUser);
   },
@@ -65,6 +65,12 @@ export const authService = {
   /** Fetch profile data của một user theo ID */
   fetchUserData: async (user_id: string) => {
     const res = await api.get<ApiUser>(`/users/${user_id}`);
+    return normalizeUser(res.data);
+  },
+
+  /** Cập nhật profile (bio, avatar) của current user */
+  updateProfile: async (data: { bio?: string; avatar?: string }) => {
+    const res = await api.put<ApiUser>("/protected/users/me", data);
     return normalizeUser(res.data);
   },
 };

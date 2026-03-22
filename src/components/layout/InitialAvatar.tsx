@@ -7,9 +7,7 @@ export function InitialAvatar({
   textClassName,
   wrapperClassName = "",
 }: InitialAvatarProps) {
-  // Lấy chữ cái đầu tiên của username.
   const initial = name.trim().charAt(0).toUpperCase() || "?";
-
   return (
     <div className={`avatar-ring ${wrapperClassName}`.trim()}>
       {/* Nếu có user có avatar thì sẽ dùng */}

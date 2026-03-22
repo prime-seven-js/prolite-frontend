@@ -72,16 +72,8 @@ const mapPost = (post: RawPost, fallbackUser?: User): Post => ({
   image_urls: mapPostImageUrls(post),
 });
 
-/** Map raw comment → typed PostComment (resolve username from lookup) */
-export const mapComment = (
-  comment: RawPostComment,
-  currentUser: User,
-  userLookup: Record<string, { username: string; avatar?: string }>,
-): PostComment => {
-  const commentAuthor =
-    comment.user_id === currentUser.user_id
-      ? currentUser
-      : userLookup[comment.user_id];
+/** Map raw comment → typed PostComment (chỉ dùng data từ API, không resolve từ lookup) */
+const mapComment = (comment: RawPostComment): PostComment => {
   const mappedUser = comment.user ?? comment.users;
 
   return {
@@ -91,9 +83,8 @@ export const mapComment = (
     content: comment.content ?? "",
     created_at: comment.created_at ?? new Date().toISOString(),
     user: {
-      username:
-        commentAuthor?.username ?? mappedUser?.username ?? "Unknown user",
-      avatar: commentAuthor?.avatar ?? mappedUser?.avatar ?? undefined,
+      username: mappedUser?.username ?? "Unknown user",
+      avatar: mappedUser?.avatar ?? undefined,
     },
   };
 };
@@ -149,28 +140,18 @@ export const postService = {
     await api.delete(`/protected/posts/${post_id}`);
   },
 
-  fetchAllPostComments: async (
-    post_id: string,
-    currentUser: User,
-    userLookup: Record<string, { username: string; avatar?: string }>,
-  ) => {
+  fetchAllPostComments: async (post_id: string) => {
     const res = await api.get<RawPostComment[]>(`/posts/${post_id}/comments`);
-    return res.data.map((comment) =>
-      mapComment(comment, currentUser, userLookup),
-    );
+    return res.data.map(mapComment);
   },
 
-  createPostComment: async (
-    post_id: string,
-    content: string,
-    currentUser: User,
-    userLookup: Record<string, { username: string; avatar?: string }>,
-  ) => {
+  createPostComment: async (post_id: string, content: string) => {
+    const aiContent = (await aiService.rewriteWithAI(content)).data;
     const res = await api.post<RawPostComment>(
       `/protected/posts/${post_id}/comments`,
-      { content },
+      { content: aiContent },
     );
-    return mapComment(res.data, currentUser, userLookup);
+    return mapComment(res.data);
   },
 
   deletePostComment: async (comment_id: string) => {

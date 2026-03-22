@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import type { MessageThreadProps } from "@/types/messagespage";
 
 /**
  * MessageThread — panel phải hiển thị thread chat.
- * Gồm: header, danh sách messages (auto-scroll), và input gửi tin nhắn.
+ * Gồm: header (tên + avatar participant), danh sách messages (auto-scroll), và input gửi tin nhắn.
  */
 const MessageThread = ({
   messages,
@@ -18,6 +19,8 @@ const MessageThread = ({
   onMessageInputChange,
   onSendMessage,
   onBack,
+  participantName = "Conversation",
+  participantAvatar,
 }: MessageThreadProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +31,8 @@ const MessageThread = ({
 
   return (
     <>
-      {/* Thread Header */}
-      <div className="sticky top-0 z-10 glass-header px-4 py-3 flex items-center gap-3">
+      {/* Thread Header — hiển thị tên + avatar participant */}
+      <div className="shrink-0 z-10 glass-header px-4 py-3 flex items-center gap-3">
         {/* Nút back — chỉ hiển thị trên mobile */}
         <Button
           variant="ghost"
@@ -39,11 +42,14 @@ const MessageThread = ({
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="w-9 h-9 rounded-full bg-linear-to-br from-[#2496d4] to-[#63d4f7] flex items-center justify-center shrink-0">
-          <MessageCircle className="w-4.5 h-4.5 text-white" />
-        </div>
+        <InitialAvatar
+          name={participantName}
+          avatarUrl={participantAvatar}
+          sizeClassName="w-9 h-9"
+          textClassName="text-sm"
+        />
         <div>
-          <p className="text-sm font-semibold">Conversation</p>
+          <p className="text-sm font-semibold">{participantName}</p>
           <p className="text-xs text-gray-500">Active now</p>
         </div>
       </div>
@@ -55,9 +61,11 @@ const MessageThread = ({
             <div className="w-8 h-8 border-2 border-[#2496d4] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <MessageCircle className="w-12 h-12 mb-4 opacity-30" />
-            <p className="text-sm">No messages yet. Say hello! 👋</p>
+        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <div className="w-12 h-12 mb-4 opacity-30 rounded-full bg-white/5 flex items-center justify-center text-2xl">
+              👋
+            </div>
+            <p className="text-sm">No messages yet. Say hello!</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -66,12 +74,16 @@ const MessageThread = ({
               msg.users?.username ??
               userLookup[msg.sender_id]?.username ??
               "Unknown";
+            const senderAvatar =
+              msg.users?.avatar ??
+              userLookup[msg.sender_id]?.avatar;
             return (
               <MessageBubble
                 key={msg.id}
                 message={msg}
                 isMine={isMine}
                 senderName={senderName}
+                senderAvatar={senderAvatar}
               />
             );
           })

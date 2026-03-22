@@ -6,7 +6,7 @@ import axios from "axios";
  * Tất cả API calls trong app đều dùng instance này.
  */
 const api = axios.create({
-  baseURL: "https://api.prolite.gay/",
+  baseURL: "https://api.prolite.gay",
 });
 
 /**
@@ -18,6 +18,7 @@ api.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log(token);
   }
 
   return config;

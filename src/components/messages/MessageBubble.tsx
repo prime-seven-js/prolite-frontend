@@ -7,7 +7,7 @@ import type { MessageBubbleProps } from "@/types/messagespage";
  * Tin nhắn của mình: căn phải, gradient xanh.
  * Tin nhắn người khác: căn trái, avatar + tên.
  */
-const MessageBubble = ({ message, isMine, senderName }: MessageBubbleProps) => {
+const MessageBubble = ({ message, isMine, senderName, senderAvatar }: MessageBubbleProps) => {
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
       <div
@@ -17,6 +17,7 @@ const MessageBubble = ({ message, isMine, senderName }: MessageBubbleProps) => {
         {!isMine && (
           <InitialAvatar
             name={senderName}
+            avatarUrl={senderAvatar}
             sizeClassName="w-8 h-8"
             textClassName="text-xs"
             wrapperClassName="shrink-0 self-end"

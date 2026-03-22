@@ -1,4 +1,4 @@
-import { Bell, Search, Home, LogOut, Plus } from "lucide-react";
+import { MessageCircle, Search, Home, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
@@ -54,11 +54,10 @@ export function MobileBottomNav({
         <Button
           variant="ghost"
           size="icon"
-          className={`${iconClass("/notifications")} relative`}
-          onClick={() => navigate("/notifications")}
+          className={`${iconClass("/messages")} relative`}
+          onClick={() => navigate("/messages")}
         >
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#2496d4]" />
+          <MessageCircle className="w-6 h-6" />
         </Button>
         <Button variant="ghost" size="icon" onClick={signOut}>
           <LogOut className="w-6 h-6" />

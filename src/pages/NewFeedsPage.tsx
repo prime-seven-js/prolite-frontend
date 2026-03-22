@@ -115,6 +115,7 @@ const NewFeedsPage = () => {
         {/* Post Composer — form tạo post trên trang chính */}
         <PostComposer
           username={user.username}
+          avatarUrl={user.avatar}
           content={content}
           imageUrls={mainDraft.previewUrls}
           imageError={mainDraft.imageError}
@@ -142,6 +143,7 @@ const NewFeedsPage = () => {
       <PostComposerModal
         isOpen={showComposer}
         username={user.username}
+        avatarUrl={user.avatar}
         content={modalContent}
         imageUrls={modalDraft.previewUrls}
         imageError={modalDraft.imageError}

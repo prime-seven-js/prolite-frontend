@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MessagesPage from "./pages/MessagesPage";
 import SearchPage from "./pages/SearchPage";
 import { Toaster } from "sonner";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 /**
  * App — root component với React Router.
@@ -45,6 +46,7 @@ function App() {
         }}
       />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Unauth */}
           <Route element={<UnAuthRoute />}>

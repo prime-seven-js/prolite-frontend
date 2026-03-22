@@ -11,6 +11,7 @@ import type { CommentInputProps } from "@/types/newfeedspage";
 
 export function CommentInput({
   username,
+  avatarUrl,
   value,
   onChange,
   onSubmit,
@@ -20,6 +21,7 @@ export function CommentInput({
     <div className="flex gap-3 min-w-0">
       <InitialAvatar
         name={username}
+        avatarUrl={avatarUrl}
         sizeClassName="w-8 h-8"
         textClassName="text-xs"
         wrapperClassName="shrink-0 self-start"

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "react-router";
-import { Edit3, UserPlus, Check } from "lucide-react";
+import { Edit3, UserPlus, Check, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -10,17 +10,23 @@ import { formatToVNDate } from "@/lib/converttime";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAllPosts } from "@/hooks/useAllPosts";
 import { useUserFriends } from "@/hooks/useFriends";
+import { useUpdateProfile } from "@/hooks/useUpdateProfile";
 import ProfilePostCard from "@/components/profile/ProfilePostCard";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Trang Profile — hiển thị thông tin user và danh sách posts của họ.
  *
  * Data fetching (TanStack Query):
  * - useUserProfile(userId) → thông tin user (cache by userId)
- *   → nếu xem profile mình: dùng data từ auth store (initialData)
- *   → nếu xem profile người khác: fetch từ API
  * - useAllPosts() → danh sách tất cả posts (filter client-side theo userId)
- * - useUserFriends() → danh sách bạn bè (để hiển thị nút Add/Your Friend)
+ * - useUserFriends() → danh sách bạn bè
+ *
+ * Edit Profile:
+ * - Cho phép sửa bio và avatar (chỉ own profile)
+ * - Avatar upload lên Supabase Storage bucket "avatars"
+ * - Gọi PUT /protected/users/me → invalidate tất cả caches
  */
 
 const ProfilePage = () => {
@@ -32,9 +38,15 @@ const ProfilePage = () => {
   const { data: postsData = [] } = useAllPosts();
   const { data: userFriendData = [] } = useUserFriends();
 
-  // UI state — editing bio
+  // UI state — editing
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Mutation cập nhật profile
+  const updateProfileMutation = useUpdateProfile();
 
   // Guard: chờ auth và params
   if (!user || !userId) return <></>;
@@ -60,25 +72,158 @@ const ProfilePage = () => {
     (friend) => friend.user_id === user.user_id,
   );
 
+  /** Bắt đầu chỉnh sửa — fill form với data hiện tại */
+  const handleStartEditing = () => {
+    setEditBio(userData.bio || "");
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    setIsEditing(true);
+  };
+
+  /** Hủy chỉnh sửa — reset tất cả state */
+  const handleCancelEditing = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    setEditBio(userData.bio || "");
+    setIsEditing(false);
+  };
+
+  /** Chọn ảnh avatar mới — tạo preview */
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  /** Lưu profile — upload avatar (nếu có) + gọi API */
+  const handleSaveProfile = async () => {
+    try {
+      let avatarUrl: string | undefined;
+
+      // Upload avatar mới lên Supabase Storage nếu có
+      if (avatarFile && user) {
+        const ext = avatarFile.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.user_id}/${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(path, avatarFile, {
+            cacheControl: "3600",
+            contentType: avatarFile.type,
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(path);
+
+        avatarUrl = publicUrl;
+      }
+
+      // Gọi API cập nhật profile
+      await updateProfileMutation.mutateAsync({
+        bio: editBio,
+        ...(avatarUrl ? { avatar: avatarUrl } : {}),
+      });
+
+      // Cleanup
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setIsEditing(false);
+      toast.success("Profile updated!", { position: "bottom-right" });
+    } catch (err) {
+      toast.error("Failed to update profile");
+      console.log("Failed to update profile", err);
+    }
+  };
+
+  // Avatar hiển thị — preview nếu đang edit, hoặc avatar hiện tại
+  const displayAvatar = avatarPreview ?? userData.avatar;
+
   return (
     <PageLayout username={user.username} activePath="/profile" rightSidebar=" ">
       {/* ── Profile Info ── */}
       <div className="px-4 pb-4 pt-6">
         <div className="flex justify-between items-start mb-3">
-          <InitialAvatar
-            name={userData.username}
-            sizeClassName="w-24 h-24"
-            textClassName="text-3xl"
-          />
+          {/* Avatar — có overlay camera icon khi đang edit */}
+          <div className="relative group">
+            <InitialAvatar
+              name={userData.username}
+              avatarUrl={displayAvatar}
+              sizeClassName="w-24 h-24"
+              textClassName="text-3xl"
+            />
+            {isEditing && (
+              <>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Camera className="w-6 h-6 text-white" />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarSelect}
+                  className="hidden"
+                />
+              </>
+            )}
+          </div>
+
+          {/* Edit Profile / Save / Cancel buttons */}
           {isOwnProfile && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full text-sm font-semibold border-white/10 text-white hover:bg-white/6 bg-transparent gap-1.5"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              Edit profile
-            </Button>
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelEditing}
+                    className="rounded-full text-sm font-semibold border-white/10 text-gray-400 hover:bg-white/6 bg-transparent gap-1.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => void handleSaveProfile()}
+                    disabled={updateProfileMutation.isPending}
+                    className="rounded-full text-sm font-semibold btn-gradient gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    {updateProfileMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartEditing}
+                  className="rounded-full text-sm font-semibold border-white/10 text-white hover:bg-white/6 bg-transparent gap-1.5"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Edit profile
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -89,33 +234,15 @@ const ProfilePage = () => {
 
           {/* Bio — editable cho own profile */}
           {isEditing ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Bio</label>
               <textarea
                 value={editBio}
                 onChange={(e) => setEditBio(e.target.value)}
                 rows={3}
-                className="w-full bg-white/4 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#2496d4]/40 resize-none"
+                placeholder="Tell people about yourself..."
+                className="w-full bg-white/4 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#2496d4]/40 resize-none placeholder:text-gray-600"
               />
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditBio(userData?.bio || "");
-                    setIsEditing(false);
-                  }}
-                  className="rounded-full text-gray-400"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setIsEditing(false)}
-                  className="btn-gradient rounded-full"
-                >
-                  Save
-                </Button>
-              </div>
             </div>
           ) : (
             <p className="text-[15px] leading-relaxed">
@@ -185,5 +312,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-
-

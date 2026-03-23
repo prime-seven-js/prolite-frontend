@@ -10,10 +10,6 @@ import { Mail, ArrowLeft, RefreshCw } from "lucide-react";
  * VerifyEmailPage — hiển thị sau khi đăng ký thành công.
  * Thông báo user kiểm tra email để xác minh tài khoản.
  * Có nút "Resend" để gửi lại email xác minh.
- *
- * Layout giống với SignInPage/SignUpPage:
- * - bg-gradient-blue dark background
- * - Card với grid 2 cột (content + image)
  */
 const VerifyEmailPage = () => {
   const location = useLocation();

@@ -2,6 +2,7 @@ import type { Post } from "@/types/post";
 import { InitialAvatar } from "../layout/InitialAvatar";
 import { PostHeader } from "../newfeeds/PostHeader";
 import { PostImageGrid } from "../newfeeds/PostImageGrid";
+import { ExpandableText } from "../newfeeds/ExpandableText";
 
 const ProfilePostCard = ({ post, index }: { post: Post; index: number }) => {
   return (
@@ -23,9 +24,12 @@ const ProfilePostCard = ({ post, index }: { post: Post; index: number }) => {
             username={post.users.username}
             timestamp={post.created_at}
           />
-          <p className="text-[15px] leading-relaxed mt-1 text-gray-100 whitespace-pre-wrap wrap-anywhere">
-            {post.content}
-          </p>
+          {/* Post content — truncate nếu quá 200 từ */}
+          <ExpandableText
+            content={post.content}
+            wordLimit={200}
+            className="text-[15px] leading-relaxed mt-1 text-gray-100 whitespace-pre-wrap wrap-anywhere"
+          />
           <PostImageGrid imageUrls={post.image_urls} />
         </div>
       </div>

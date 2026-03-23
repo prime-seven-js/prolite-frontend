@@ -8,6 +8,7 @@ import { PostMenu } from "@/components/newfeeds/PostMenu";
 import { LikeButton } from "@/components/newfeeds/LikeButton";
 import { CommentItem } from "@/components/newfeeds/CommentItem";
 import { CommentInput } from "@/components/newfeeds/CommentInput";
+import { ExpandableText } from "@/components/newfeeds/ExpandableText";
 import { useMemo, useState } from "react";
 import { useDeletePost } from "@/hooks/usePosts";
 import {
@@ -166,11 +167,13 @@ export function PostCard({
             )}
           </div>
 
-          {/* Post content text */}
+          {/* Post content text — truncate nếu quá 200 từ */}
           {post.content && (
-            <p className="mt-1 text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap wrap-anywhere">
-              {post.content}
-            </p>
+            <ExpandableText
+              content={post.content}
+              wordLimit={200}
+              className="mt-1 text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap wrap-anywhere"
+            />
           )}
 
           {/* Post images grid */}

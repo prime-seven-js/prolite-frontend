@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { PostHeader } from "@/components/newfeeds/PostHeader";
+import { ExpandableText } from "@/components/newfeeds/ExpandableText";
 import type { CommentItemProps } from "@/types/newfeedspage";
 
 /**
@@ -47,10 +48,12 @@ export function CommentItem({
             </Button>
           )}
         </div>
-        {/* Comment Content */}
-        <p className="mt-1 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap wrap-anywhere">
-          {comment.content}
-        </p>
+        {/* Comment Content — truncate nếu quá 200 từ */}
+        <ExpandableText
+          content={comment.content}
+          wordLimit={200}
+          className="mt-1 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap wrap-anywhere"
+        />
       </div>
     </div>
   );

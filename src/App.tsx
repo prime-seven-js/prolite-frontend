@@ -10,6 +10,8 @@ import MessagesPage from "./pages/MessagesPage";
 import SearchPage from "./pages/SearchPage";
 import { Toaster } from "sonner";
 import { ScrollToTop } from "./components/ScrollToTop";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+import EmailConfirmedPage from "./pages/EmailConfirmedPage";
 
 /**
  * App — root component với React Router.
@@ -52,6 +54,8 @@ function App() {
           <Route element={<UnAuthRoute />}>
             <Route path="/signin" element={<SignInPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/email-confirmed" element={<EmailConfirmedPage />} />
           </Route>
           {/* Auth */}
           <Route element={<AuthRoute />}>

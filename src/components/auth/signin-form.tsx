@@ -65,6 +65,15 @@ export function SigninForm({
         return;
       }
 
+      // Kiểm tra email đã xác minh trên Supabase chưa
+      const isVerified = await authService.checkEmailVerified(email, password);
+      if (!isVerified) {
+        setError("email", {
+          message: "Please verify your email before signing in. Check your inbox.",
+        });
+        return;
+      }
+
       await signIn(email, password);
       navigate("/");
     } catch (err: unknown) {

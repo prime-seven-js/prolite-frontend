@@ -288,7 +288,7 @@ const ProfilePage = () => {
         <div
           className={`flex-1 text-center h-auto py-3 text-sm font-medium rounded-none border-b-2 transition-all text-[#63d4f7] border-[#2496d4]`}
         >
-          Posts {filteredPosts.length}
+          Posts ({filteredPosts.length})
         </div>
       </div>
 

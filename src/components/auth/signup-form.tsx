@@ -7,15 +7,19 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { authService } from "@/services/authService";
 
-/** 
+/**
  * Giao diện SignupPage lấy từ Shadcn.
  * Zod: Dùng để validate form.
- * Global State:
- * - useAuthStore → Lưu trữ state liên quan đến Auth.
-*/
+ *
+ * Flow đăng ký:
+ * 1. Kiểm tra email/username đã tồn tại trong DB chưa.
+ * 2. Gọi Supabase Auth để tạo tài khoản chờ xác minh email.
+ * 3. Lưu pending signup info vào localStorage.
+ * 4. Navigate sang /verify-email.
+ * 5. Sau khi user verify email → EmailConfirmedPage sẽ gọi /register tạo DB account.
+ */
 
 // Khai báo Schema để Zod validate form.
 const signupSchema = z.object({
@@ -52,8 +56,6 @@ export function SignupForm({
     resolver: zodResolver(signupSchema),
   });
 
-  // Gọi các phương thức của useAuthStore() và useNavigate().
-  const { signUp } = useAuthStore();
   const navigate = useNavigate();
 
   // Hàm event khi user submit form.
@@ -63,6 +65,7 @@ export function SignupForm({
     const password = data.password;
 
     try {
+      // Kiểm tra email/username đã tồn tại trong DB chưa
       const users = await authService.fetchUsers();
       const emailExists = users.some(
         (user) => user.email.toLowerCase() === email,
@@ -71,7 +74,6 @@ export function SignupForm({
         (user) => user.username.toLowerCase() === username.toLowerCase(),
       );
 
-      // Khi mail đã tồn tại trên DB.
       if (emailExists) {
         setError("email", {
           message: "This email is already registered.",
@@ -79,7 +81,6 @@ export function SignupForm({
         return;
       }
 
-      // Khi username đã tồn tại trên DB.
       if (usernameExists) {
         setError("username", {
           message: "This username is already taken.",
@@ -87,31 +88,23 @@ export function SignupForm({
         return;
       }
 
-      await signUp(email, username, password);
-      navigate("/signin");
-    } catch (err: unknown) {
-      const axiosError = err as {
-        response?: {
-          data?: {
-            error?: string;
-          };
-        };
-      };
-      const errorMessage =
-        axiosError.response?.data?.error?.toLowerCase() ?? "";
+      // Chỉ đăng ký trên Supabase Auth (chưa tạo account trong DB)
+      await authService.signUpWithSupabase(email, password);
 
-      // Khi mail đã tồn tại trên DB.
-      if (errorMessage.includes("email")) {
+      // Lưu thông tin đăng ký vào localStorage để EmailConfirmedPage dùng
+      localStorage.setItem(
+        "pending_signup",
+        JSON.stringify({ email, username, password }),
+      );
+
+      navigate("/verify-email", { state: { email } });
+    } catch (err: unknown) {
+      const supabaseError = err as { message?: string };
+      const errorMessage = supabaseError.message?.toLowerCase() ?? "";
+
+      if (errorMessage.includes("already registered") || errorMessage.includes("already been registered")) {
         setError("email", {
           message: "This email is already registered.",
-        });
-        return;
-      }
-
-      // Khi username đã tồn tại trên DB.
-      if (errorMessage.includes("username")) {
-        setError("username", {
-          message: "This username is already taken.",
         });
         return;
       }

@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { supabase } from "@/lib/supabase";
 import type { User } from "@/types/user";
 
 type AuthResponseUser = {
@@ -72,5 +73,54 @@ export const authService = {
   updateProfile: async (data: { bio?: string; avatar?: string }) => {
     const res = await api.put<ApiUser>("/protected/users/me", data);
     return normalizeUser(res.data);
+  },
+
+  /**
+   * Đăng ký trên Supabase Auth để gửi email xác minh.
+   * Gọi sau khi backend /register thành công.
+   */
+  signUpWithSupabase: async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/email-confirmed`,
+      },
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Kiểm tra email đã xác minh trên Supabase chưa.
+   * Dùng khi login — nếu chưa verify thì không cho đăng nhập.
+   */
+  checkEmailVerified: async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) return false;
+    const verified = !!data.user?.email_confirmed_at;
+    // Sign out khỏi Supabase session (chỉ dùng để check, không dùng cho auth chính)
+    await supabase.auth.signOut();
+    return verified;
+  },
+
+  /**
+   * Gửi lại email xác minh.
+   * Dùng trên trang VerifyEmailPage khi user muốn gửi lại.
+   */
+  resendVerificationEmail: async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/email-confirmed`,
+      },
+    });
+    if (error) throw error;
   },
 };

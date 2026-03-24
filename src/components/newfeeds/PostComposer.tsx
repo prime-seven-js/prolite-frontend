@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { PostImageGrid } from "@/components/newfeeds/PostImageGrid";
 import { ImagePicker } from "@/components/newfeeds/ImagePicker";
 import type { PostComposerProps } from "@/types/newfeedspage";
+import type { KeyboardEvent } from "react";
 
 /**
  * Composer đăng post ở trang chính.
@@ -24,6 +25,16 @@ export function PostComposer({
   onRemoveImage,
   onSubmit,
 }: PostComposerProps) {
+  const canSubmit = (!!content.trim() || imageUrls.length > 0) && !isSubmitting;
+
+  const handleTextareaKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+
+    e.preventDefault();
+    if (!canSubmit) return;
+    onSubmit();
+  };
+
   return (
     <Card className="glass-card mb-6 rounded-2xl border-0 py-0">
       <CardContent className="p-4">
@@ -39,13 +50,16 @@ export function PostComposer({
 
           <div className="min-w-0 flex-1">
             {/* Content input */}
-            <Textarea
+            <AutoResizeTextarea
               ref={textareaRef}
               placeholder="What's happening?"
               value={content}
-              onChange={(e) => onContentChange(e.target.value)}
+              onChange={onContentChange}
+              onKeyDown={handleTextareaKeyDown}
+              maxLength={500}
+              showCounter
               rows={1}
-              className="min-h-0 w-full border-0 bg-transparent px-0 text-[15px] leading-relaxed placeholder:text-gray-500 shadow-none wrap-anywhere focus-visible:ring-0 dark:bg-transparent"
+              className="min-h-0 w-full border-0 bg-transparent px-0 text-[15px] leading-relaxed placeholder:text-gray-500 shadow-none wrap-anywhere focus-visible dark:bg-transparent"
             />
             {/* Image display */}
             <PostImageGrid
@@ -71,9 +85,7 @@ export function PostComposer({
               {/* Submit new post */}
               <Button
                 onClick={onSubmit}
-                disabled={
-                  (!content.trim() && imageUrls.length === 0) || isSubmitting
-                }
+                disabled={!canSubmit}
                 className="btn-gradient h-auto rounded-full px-5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSubmitting ? "Posting..." : "Post"}

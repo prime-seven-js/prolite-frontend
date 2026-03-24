@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { PostImageGrid } from "@/components/newfeeds/PostImageGrid";
 import { ImagePicker } from "@/components/newfeeds/ImagePicker";
 import type { PostComposerModalProps } from "@/types/newfeedspage";
+import type { KeyboardEvent } from "react";
 
 /**
  * Modal Composer đăng post khi bấm vào nút Newpost ở thanh điều hướng.
@@ -26,6 +27,17 @@ export function PostComposerModal({
   onSubmit,
 }: PostComposerModalProps) {
   if (!isOpen) return null;
+
+  const canSubmit = (!!content.trim() || imageUrls.length > 0) && !isSubmitting;
+
+  const handleTextareaKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+
+    e.preventDefault();
+    if (!canSubmit) return;
+    onSubmit();
+  };
+
   return (
     <div
       className="fixed inset-0 z-60 flex items-start justify-center px-4 pt-20"
@@ -51,9 +63,7 @@ export function PostComposerModal({
 
           <Button
             onClick={onSubmit}
-            disabled={
-              (!content.trim() && imageUrls.length === 0) || isSubmitting
-            }
+            disabled={!canSubmit}
             className="btn-gradient z-10 h-auto rounded-full px-5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting ? "Posting..." : "Post"}
@@ -73,11 +83,15 @@ export function PostComposerModal({
             />
 
             <div className="min-w-0 flex-1">
-              <Textarea
+              {/* Content input*/}
+              <AutoResizeTextarea
                 autoFocus
                 placeholder="What's happening?"
                 value={content}
-                onChange={(e) => onContentChange(e.target.value)}
+                onChange={onContentChange}
+                onKeyDown={handleTextareaKeyDown}
+                maxLength={500}
+                showCounter
                 rows={1}
                 className="min-h-0 flex-1 border-0 bg-transparent px-0 text-[15px] leading-relaxed placeholder:text-gray-500 shadow-none wrap-anywhere focus-visible:ring-0 dark:bg-transparent"
               />

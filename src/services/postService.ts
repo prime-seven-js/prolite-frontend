@@ -117,8 +117,8 @@ const fetchPostLikesSummary = async (
  * Post Service — CRUD posts, likes, comments.
  */
 export const postService = {
-  fetchAllPostsData: async () => {
-    const res = await api.get<RawPost[]>("/posts");
+  fetchAllPostsData: async ({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}) => {
+    const res = await api.get<RawPost[]>(`/posts?page=${page}&limit=${limit}`);
     return res.data.map((post) => mapPost(post));
   },
 

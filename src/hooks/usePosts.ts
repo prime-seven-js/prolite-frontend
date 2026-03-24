@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import { postService } from "@/services/postService";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/queryKeys";
@@ -7,8 +8,7 @@ import type { User } from "@/types/user";
 
 /**
  * Mutation tạo post mới.
- * Optimistic update: thêm post vào đầu danh sách cache ngay lập tức
- * để user thấy post mới xuất hiện mà không cần đợi refetch.
+ * Optimistic update: thêm post vào đầu page đầu tiên trong InfiniteData cache.
  */
 export function useCreatePost() {
   const queryClient = useQueryClient();
@@ -24,18 +24,24 @@ export function useCreatePost() {
       imageUrls?: string[];
     }) => postService.newPost(content, user, imageUrls),
     onSuccess: (createdPost) => {
-      // Thêm post mới vào đầu feed
       toast.success("You have just created a new post", {position: "bottom-right"});
-      queryClient.setQueryData<Post[]>(queryKeys.posts.all, (old) =>
-        old ? [createdPost, ...old] : [createdPost],
-      );
+      // Thêm post mới vào đầu page đầu tiên trong InfiniteData
+      queryClient.setQueryData<InfiniteData<Post[]>>(queryKeys.posts.all, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, i) =>
+            i === 0 ? [createdPost, ...page] : page,
+          ),
+        };
+      });
     },
   });
 }
 
 /**
  * Mutation xóa post.
- * Optimistic update: xóa post khỏi cache ngay lập tức.
+ * Optimistic update: xóa post khỏi tất cả pages trong InfiniteData cache.
  */
 export function useDeletePost() {
   const queryClient = useQueryClient();
@@ -43,9 +49,15 @@ export function useDeletePost() {
   return useMutation({
     mutationFn: (postId: string) => postService.deletePost(postId),
     onSuccess: (_data, postId) => {
-      queryClient.setQueryData<Post[]>(queryKeys.posts.all, (old) =>
-        old?.filter((p) => p.post_id !== postId),
-      );
+      queryClient.setQueryData<InfiniteData<Post[]>>(queryKeys.posts.all, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.filter((p) => p.post_id !== postId),
+          ),
+        };
+      });
     },
   });
 }

@@ -88,28 +88,34 @@ export function SignupForm({
         return;
       }
 
-      // Chỉ đăng ký trên Supabase Auth (chưa tạo account trong DB)
-      await authService.signUpWithSupabase(email, password);
+      await authService.signUp(email, username, password);
 
-      // Lưu thông tin đăng ký vào localStorage để EmailConfirmedPage dùng
-      localStorage.setItem(
-        "pending_signup",
-        JSON.stringify({ email, username, password }),
-      );
+      try {
+        await authService.signUpWithSupabase(email, password);
+      } catch (supabaseErr: unknown) {
+        // Nếu Supabase báo email đã tồn tại (do user retry) → gửi lại email verify
+        const msg = (supabaseErr as { message?: string }).message?.toLowerCase() ?? "";
+        if (msg.includes("already registered") || msg.includes("already been registered")) {
+          await authService.resendVerificationEmail(email);
+        } else {
+          console.error("Supabase signUp error (DB account created):", supabaseErr);
+        }
+      }
 
       navigate("/verify-email", { state: { email } });
     } catch (err: unknown) {
-      const supabaseError = err as { message?: string };
-      const errorMessage = supabaseError.message?.toLowerCase() ?? "";
+      const axiosError = err as { response?: { data?: { error?: string }; status?: number } };
+      const serverMsg = axiosError.response?.data?.error?.toLowerCase() ?? "";
 
-      if (errorMessage.includes("already registered") || errorMessage.includes("already been registered")) {
+      // Email đã tồn tại trên DB (duplicate key)
+      if (serverMsg.includes("duplicate") || serverMsg.includes("already")) {
         setError("email", {
           message: "This email is already registered.",
         });
         return;
       }
 
-      // Lỗi server
+      // Lỗi server khác
       setError("root", {
         message: "Unable to create your account right now. Please try again.",
       });

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo, type KeyboardEvent } from "react";
 import { useParams } from "react-router";
 import { Edit3, UserPlus, Check, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,12 @@ const ProfilePage = () => {
 
   // Server state — TanStack Query
   const { data: userData, isLoading: profileLoading } = useUserProfile(userId);
-  const { data: postsData = [] } = useAllPosts();
+  const { data: postsInfiniteData } = useAllPosts();
+  // Flatten infinite query pages thành flat array
+  const postsData = useMemo(
+    () => postsInfiniteData?.pages.flatMap((page) => page) ?? [],
+    [postsInfiniteData],
+  );
   const { data: userFriendData = [] } = useUserFriends();
 
   // UI state — editing
@@ -153,6 +158,20 @@ const ProfilePage = () => {
     }
   };
 
+  const handleBioKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      e.key !== "Enter" ||
+      e.shiftKey ||
+      e.nativeEvent.isComposing ||
+      updateProfileMutation.isPending
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    void handleSaveProfile();
+  };
+
   // Avatar hiển thị — preview nếu đang edit, hoặc avatar hiện tại
   const displayAvatar = avatarPreview ?? userData.avatar;
 
@@ -239,6 +258,7 @@ const ProfilePage = () => {
               <textarea
                 value={editBio}
                 onChange={(e) => setEditBio(e.target.value)}
+                onKeyDown={handleBioKeyDown}
                 rows={3}
                 placeholder="Tell people about yourself..."
                 className="w-full bg-white/4 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#2496d4]/40 resize-none placeholder:text-gray-600"

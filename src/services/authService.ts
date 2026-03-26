@@ -54,7 +54,7 @@ export const authService = {
     return res.data;
   },
 
-  /** Đăng nhập → trả về token + user data */
+  /** Đăng nhập  */
   signIn: async (email: string, password: string) => {
     const res = await api.post<LoginResponse>("/login", { email, password });
     return {

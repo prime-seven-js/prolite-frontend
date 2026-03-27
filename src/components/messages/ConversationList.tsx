@@ -96,8 +96,6 @@ const ConversationList = ({
                     sizeClassName="w-12 h-12"
                     textClassName="text-sm"
                   />
-                  {/* Online dot placeholder */}
-                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111827]" />
                 </div>
 
                 {/* Info */}

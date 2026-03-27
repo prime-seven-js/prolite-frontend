@@ -79,17 +79,6 @@ const MessageThread = ({
           <p className="text-[15px] font-semibold leading-tight truncate">
             {participantName}
           </p>
-          <p className="text-[11px] text-green-400 font-medium">Active now</p>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <button className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-[#63d4f7] hover:bg-white/8 transition-colors">
-            <Phone className="w-4 h-4" />
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-[#63d4f7] hover:bg-white/8 transition-colors">
-            <Video className="w-4.5 h-4.5" />
-          </button>
         </div>
       </div>
 

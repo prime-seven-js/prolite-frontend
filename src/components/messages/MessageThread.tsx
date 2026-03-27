@@ -5,6 +5,7 @@ import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { formatMessageTimestamp } from "@/lib/converttime";
 import type { MessageThreadProps } from "@/types/messagespage";
+import { useNavigate } from "react-router";
 
 const GROUPING_TIME_MS = 5 * 60 * 1000; // 5 phút
 const DIVIDER_TIME_MS = 30 * 60 * 1000; // 30 phút
@@ -26,6 +27,7 @@ const MessageThread = ({
   participantAvatar,
 }: MessageThreadProps) => {
   const endRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Auto-scroll khi có tin nhắn mới
   useEffect(() => {
@@ -79,6 +81,16 @@ const MessageThread = ({
           <p className="text-[15px] font-semibold leading-tight truncate">
             {participantName}
           </p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1">
+          <button className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-[#63d4f7] hover:bg-white/8 transition-colors" onClick={() => navigate("/donate")}>
+            <Phone className="w-4 h-4" />
+          </button>
+          <button className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-[#63d4f7] hover:bg-white/8 transition-colors" onClick={() => navigate("/donate")}>
+            <Video className="w-4.5 h-4.5" />
+          </button>
         </div>
       </div>
 

@@ -58,8 +58,8 @@ const ConversationList = ({
             <MessageCircle className="w-10 h-10 mb-3 opacity-20" />
             <p className="text-sm font-medium text-gray-400">
               {searchQuery
-                ? "Không tìm thấy cuộc trò chuyện"
-                : "Chưa có cuộc trò chuyện nào"}
+                ? "No conversations found"
+                : "No conversations yet"}
             </p>
             {!searchQuery && (
               <p className="text-xs mt-1 text-gray-600">
@@ -74,7 +74,7 @@ const ConversationList = ({
             const lastMsg = conv.last_message;
             const preview = lastMsg
               ? lastMsg.sender_id === currentUserId
-                ? `Bạn: ${lastMsg.content}`
+                ? `You: ${lastMsg.content}`
                 : lastMsg.content
               : null;
             const lastTime =

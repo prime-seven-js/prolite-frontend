@@ -347,7 +347,12 @@ const ProfilePage = () => {
           </div>
         ) : (
           postsData.map((post, i) => (
-            <ProfilePostCard key={post.post_id} post={post} index={i} />
+            <ProfilePostCard 
+              key={post.post_id} 
+              post={post} 
+              index={i} 
+              isOwnProfile={isOwnProfile} 
+            />
           ))
         )}
       </div>

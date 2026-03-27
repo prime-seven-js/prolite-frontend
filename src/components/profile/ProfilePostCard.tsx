@@ -3,8 +3,20 @@ import { InitialAvatar } from "../layout/InitialAvatar";
 import { PostHeader } from "../newfeeds/PostHeader";
 import { PostImageGrid } from "../newfeeds/PostImageGrid";
 import { ExpandableText } from "../newfeeds/ExpandableText";
+import { PostMenu } from "../newfeeds/PostMenu";
+import { useDeletePost } from "@/hooks/usePosts";
 
-const ProfilePostCard = ({ post, index }: { post: Post; index: number }) => {
+const ProfilePostCard = ({
+  post,
+  index,
+  isOwnProfile = false,
+}: {
+  post: Post;
+  index: number;
+  isOwnProfile?: boolean;
+}) => {
+  const deletePostMutation = useDeletePost();
+  
   return (
     <div
       className="border-b border-white/4 px-4 py-4 hover:bg-white/1.5 transition-colors animate-fade-in-up"
@@ -20,10 +32,18 @@ const ProfilePostCard = ({ post, index }: { post: Post; index: number }) => {
         />
 
         <div className="flex-1 min-w-0">
-          <PostHeader
-            username={post.users.username}
-            timestamp={post.created_at}
-          />
+          <div className="flex items-center justify-between">
+            <PostHeader
+              username={post.users.username}
+              timestamp={post.created_at}
+            />
+            {isOwnProfile && (
+              <PostMenu
+                loading={deletePostMutation.isPending}
+                onDelete={() => deletePostMutation.mutateAsync(post.post_id)}
+              />
+            )}
+          </div>
           {/* Post content — truncate nếu quá 200 từ */}
           <ExpandableText
             content={post.content}

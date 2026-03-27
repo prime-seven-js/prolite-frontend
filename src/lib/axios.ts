@@ -6,7 +6,7 @@ import axios from "axios";
  * Tất cả API calls trong app đều dùng instance này.
  */
 const api = axios.create({
-  baseURL: "http://localhost:8787",
+  baseURL: "https://api.prolite.gay",
 });
 
 /**

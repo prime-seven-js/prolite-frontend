@@ -4,12 +4,22 @@ import { queryKeys } from "@/lib/queryKeys";
 import type { FriendRequest } from "@/types/notification";
 
 /**
- * Hook fetch danh sách friend requests đang chờ duyệt.
+ * Hook fetch danh sách friend requests đang chờ duyệt (nhận được).
  */
 export function usePendingFriendRequests() {
   return useQuery({
     queryKey: queryKeys.friends.pending,
     queryFn: friendService.fetchPending,
+  });
+}
+
+/**
+ * Hook fetch danh sách friend requests đã gửi đi.
+ */
+export function useSentFriendRequests() {
+  return useQuery({
+    queryKey: queryKeys.friends.sent,
+    queryFn: friendService.fetchSentRequests,
   });
 }
 
@@ -69,10 +79,17 @@ export function useDeclineFriendRequest() {
 
 /**
  * Mutation gửi friend request.
- * Không cần invalidate gì vì pending list là của mình, không phải của target user.
+ * Sau khi thành công, invalidate sent requests cache.
  */
 export function useSendFriendRequest() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (userId: string) => friendService.sendRequest(userId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.friends.sent,
+      });
+    },
   });
 }

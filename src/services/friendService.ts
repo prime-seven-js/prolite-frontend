@@ -1,9 +1,9 @@
 import api from "@/lib/axios";
-import type { Friend, FriendRequest } from "@/types/notification";
+import type { Friend, FriendRequest, SentFriendRequest } from "@/types/notification";
 
 /**
  * Friend Service — quản lý friend requests và danh sách bạn bè.
- * Gồm: gửi/chấp nhận/từ chối request, fetch pending/friends.
+ * Gồm: gửi/chấp nhận/từ chối request, fetch pending/sent/friends.
  */
 export const friendService = {
   /** Gửi friend request đến user */
@@ -24,9 +24,15 @@ export const friendService = {
     return res.data;
   },
 
-  /** Fetch danh sách friend requests đang chờ duyệt */
+  /** Fetch danh sách friend requests đang chờ duyệt (nhận được) */
   fetchPending: async (): Promise<FriendRequest[]> => {
     const res = await api.get<FriendRequest[]>("/protected/friends/pending");
+    return res.data;
+  },
+
+  /** Fetch danh sách friend requests đã gửi đi */
+  fetchSentRequests: async (): Promise<SentFriendRequest[]> => {
+    const res = await api.get<SentFriendRequest[]>("/protected/friends/sent");
     return res.data;
   },
 

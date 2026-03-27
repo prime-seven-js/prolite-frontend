@@ -21,9 +21,10 @@ export const queryKeys = {
     all: ["notifications"] as const,
   },
 
-  /** Friends: pending requests + danh sách bạn bè */
+  /** Friends: pending requests, sent requests, + danh sách bạn bè */
   friends: {
     pending: ["friends", "pending"] as const,
+    sent: ["friends", "sent"] as const,
     list: ["friends", "list"] as const,
   },
 

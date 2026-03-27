@@ -1,8 +1,8 @@
 import { Bell, Heart, MessageSquare, UserPlus } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
 import { usePendingFriendRequests } from "@/hooks/useFriends";
 import { useUserLookup } from "@/hooks/useUserLookup";
 import type { NotificationType } from "@/types/notification";
@@ -46,6 +46,14 @@ const NotificationsPage = () => {
   const { data: notifications = [], isLoading: loading } = useNotifications();
   const { data: pendingRequests = [] } = usePendingFriendRequests();
   const userLookup = useUserLookup();
+
+  // Mark all as read on mount
+  const markAllRead = useMarkAllNotificationsRead();
+  useEffect(() => {
+    if (notifications.some((n) => !n.is_read)) {
+      markAllRead.mutate();
+    }
+  }, [notifications.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // UI state
   const [activeFilter, setActiveFilter] = useState<FilterTabType>("all");

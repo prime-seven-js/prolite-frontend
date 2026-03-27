@@ -1,5 +1,5 @@
 // Icons
-import { Search, UserPlus, Users } from "lucide-react";
+import { Search, UserPlus, Users, Check } from "lucide-react";
 // Shadcn
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -171,31 +171,39 @@ const SearchPage = () => {
                       </p>
                     )}
                   </div>
-                  {/* Nút Add Friend — ẩn nếu đã là bạn */}
-                  {!isFriend && (
-                    <div className="shrink-0">
-                      {hasSent ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                          className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent"
-                        >
-                          Requested
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleSendFriendRequest(u.user_id)}
-                          disabled={isSending}
-                          className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
-                        >
-                          <UserPlus className="w-3.5 h-3.5" />
-                          {isSending ? "Sending..." : "Add Friend"}
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  {/* Nút Add Friend / Friends / Requested */}
+                  <div className="shrink-0">
+                    {isFriend ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="rounded-full text-xs font-semibold border-white/10 text-gray-400 bg-transparent gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Friends
+                      </Button>
+                    ) : hasSent ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent"
+                      >
+                        Requested
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleSendFriendRequest(u.user_id)}
+                        disabled={isSending}
+                        className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        {isSending ? "Sending..." : "Add Friend"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

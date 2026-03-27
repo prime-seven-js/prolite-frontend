@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useMemo } from "react";
 import type { HeaderProps } from "@/types/pagelayout";
 
 /** 
@@ -15,6 +17,13 @@ export function Header({ username }: HeaderProps) {
   // Gọi các phương thức của useAuthStore() và useNavigate().
   const { user } = useAuthStore();
   const navigate = useNavigate();
+
+  // Fetch notifications to check for unread count
+  const { data: notifications = [] } = useNotifications();
+  const hasUnread = useMemo(
+    () => notifications.some((n) => !n.is_read),
+    [notifications],
+  );
 
   return (
     <header className="glass-header sticky top-0 z-50">
@@ -36,7 +45,9 @@ export function Header({ username }: HeaderProps) {
             onClick={() => navigate("/notifications")}
           >
             <Bell className="w-5 h-5 text-gray-300" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2496d4] animate-pulse-glow" />
+            {hasUnread && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2496d4] animate-pulse-glow" />
+            )}
           </Button>
           {/* Initial Avatar */}
           <button

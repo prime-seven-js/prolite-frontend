@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, type KeyboardEvent } from "react";
 import { useParams } from "react-router";
-import { Edit3, UserPlus, Check, Camera, X } from "lucide-react";
+import { Edit3, UserPlus, Check, Camera, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -9,7 +9,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { formatToVNDate } from "@/lib/converttime";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAllPosts } from "@/hooks/useAllPosts";
-import { useUserFriends } from "@/hooks/useFriends";
+import { useUserFriends, useSendFriendRequest, useSentFriendRequests } from "@/hooks/useFriends";
 import { useUpdateProfile } from "@/hooks/useUpdateProfile";
 import ProfilePostCard from "@/components/profile/ProfilePostCard";
 import { toast } from "sonner";
@@ -42,6 +42,8 @@ const ProfilePage = () => {
     [postsInfiniteData],
   );
   const { data: userFriendData = [] } = useUserFriends();
+  const { data: sentRequests = [] } = useSentFriendRequests();
+  const sendFriendRequestMutation = useSendFriendRequest();
 
   // UI state — editing
   const [isEditing, setIsEditing] = useState(false);
@@ -74,8 +76,21 @@ const ProfilePage = () => {
 
   const isOwnProfile = userId === user.user_id;
   const isFriend = userFriendData.some(
-    (friend) => friend.user_id === user.user_id,
+    (friend) => friend.user_id === userId,
   );
+  const hasSentRequest = sentRequests.some(
+    (req) => req.users.user_id === userId,
+  );
+
+  const handleSendFriendRequest = async () => {
+    if (!userId) return;
+    try {
+      await sendFriendRequestMutation.mutateAsync(userId);
+      toast.success(`Friend request sent!`);
+    } catch {
+      toast.error("Failed to send friend request");
+    }
+  };
 
   /** Bắt đầu chỉnh sửa — fill form với data hiện tại */
   const handleStartEditing = () => {
@@ -278,25 +293,39 @@ const ProfilePage = () => {
             <span className="text-gray-500 text-sm">
               Created at {formatToVNDate(userData.createdAt || "")}
             </span>
-            {/* Nút Add Friend / Your Friend — chỉ hiển thị khi xem profile người khác */}
-            {!isOwnProfile &&
-              (isFriend ? (
+            {/* Nút Add Friend / Your Friend / Pending — chỉ hiển thị khi xem profile người khác */}
+            {!isOwnProfile && (
+              isFriend ? (
                 <Button
                   size="sm"
-                  className="rounded-full text-xs font-semibold btn-gradient gap-1.5"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  Add Friend
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
+                  disabled
                   className="rounded-full text-xs font-semibold bg-gradient-primary text-neutral-50 gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Your Friend
                 </Button>
-              ))}
+              ) : hasSentRequest ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent gap-1.5"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  Pending
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => void handleSendFriendRequest()}
+                  disabled={sendFriendRequestMutation.isPending}
+                  className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {sendFriendRequestMutation.isPending ? "Sending..." : "Add Friend"}
+                </Button>
+              )
+            )}
           </div>
         </div>
       </div>

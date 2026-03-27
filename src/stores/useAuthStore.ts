@@ -1,4 +1,5 @@
 import { authService } from "@/services/authService";
+import { supabase } from "@/lib/supabase";
 import type { User } from "@/types/user";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -65,6 +66,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signOut: async () => {
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {
+          console.error("Failed to sign out from Supabase", err);
+        }
         get().clearState();
       },
 

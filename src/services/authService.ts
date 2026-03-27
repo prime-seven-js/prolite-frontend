@@ -104,8 +104,11 @@ export const authService = {
     });
     if (error) return false;
     const verified = !!data.user?.email_confirmed_at;
-    // Sign out khỏi Supabase session (chỉ dùng để check, không dùng cho auth chính)
-    await supabase.auth.signOut();
+    // Nếu chưa verify thì sign out để dọn dẹp session
+    if (!verified) {
+      await supabase.auth.signOut();
+    }
+    // Nếu đã verify, GIỮ LẠI session để dùng cho việc upload ảnh trên Supabase Storage (RLS posts_images)
     return verified;
   },
 

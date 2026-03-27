@@ -1,5 +1,5 @@
 // Icons
-import { Search, UserPlus, Users, Check } from "lucide-react";
+import { Search, UserPlus, Users, Check, Clock } from "lucide-react";
 // Shadcn
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import type { User } from "@/types/user";
 // TanStack Query hooks — thay thế useGlobalStore và useFriendStore
 import { useAllUsers } from "@/hooks/useAllUsers";
 import { useUserLookup } from "@/hooks/useUserLookup";
-import { useUserFriends, useSendFriendRequest, usePendingFriendRequests } from "@/hooks/useFriends";
+import { useUserFriends, useSendFriendRequest, useSentFriendRequests } from "@/hooks/useFriends";
 // React & React-router Hooks
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -34,7 +34,7 @@ const SearchPage = () => {
   const { data: usersData = [] } = useAllUsers();
   const { data: userFriendData = [] } = useUserFriends();
   const sendFriendRequestMutation = useSendFriendRequest();
-  const { data: pendingRequests = [] } = usePendingFriendRequests();
+  const { data: sentRequests = [] } = useSentFriendRequests();
   const lookup = useUserLookup();
 
   // UI state
@@ -135,7 +135,7 @@ const SearchPage = () => {
         ) : (
           displayedUsers.map((u, i) => {
             const isHighlighted = u.user_id === highlightedUserId;
-            const hasSent = pendingRequests.some((friend) => friend.users.user_id === u.user_id);
+            const hasSent = sentRequests.some((friend) => friend.users.user_id === u.user_id);
             const isSending =
               sendFriendRequestMutation.isPending &&
               sendFriendRequestMutation.variables === u.user_id;
@@ -188,9 +188,10 @@ const SearchPage = () => {
                         variant="outline"
                         size="sm"
                         disabled
-                        className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent"
+                        className="rounded-full text-xs font-semibold border-white/10 text-gray-500 bg-transparent gap-1.5"
                       >
-                        Requested
+                        <Clock className="w-3.5 h-3.5" />
+                        Pending
                       </Button>
                     ) : (
                       <Button

@@ -18,10 +18,10 @@ export interface Conversation {
     is_group: boolean;
     created_at: string;
   };
-  /** Danh sách participants — populated từ API hoặc enriched client-side */
-  participants?: ConversationParticipant[];
+  /** Danh sách participants — được enrich từ backend */
+  participants: ConversationParticipant[];
   /** Tin nhắn cuối cùng — dùng hiển thị preview trên ConversationList */
-  last_message?: LastMessage;
+  last_message?: LastMessage | null;
 }
 
 export interface Message {

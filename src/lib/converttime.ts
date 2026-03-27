@@ -44,3 +44,23 @@ export function formatToVNDate(dateString: string) {
 
   return `${day}-${month}-${year}`;
 }
+
+export function formatTimeOnly(dateString: string) {
+  const date = new Date(dateString + "Z");
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+
+export function formatMessageTimestamp(dateString: string) {
+  const date = new Date(dateString + "Z");
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}

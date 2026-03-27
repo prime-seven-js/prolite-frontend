@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
-import { Users } from "lucide-react";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageLayout } from "@/components/layout/PageLayout";
-
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { User } from "@/types/user";
+
 // TanStack Query hooks
 import { useAllUsers } from "@/hooks/useAllUsers";
 import {
@@ -16,49 +12,44 @@ import {
 } from "@/hooks/useConversations";
 import { useUserLookup } from "@/hooks/useUserLookup";
 
-// Realtime hooks — Supabase Realtime subscriptions
+// Realtime subscriptions
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useRealtimeConversations } from "@/hooks/useRealtimeConversations";
 
-// Components tách ra từ MessagesPage
+// Components
 import ConversationList from "@/components/messages/ConversationList";
 import NewChatPanel from "@/components/messages/NewChatPanel";
 import MessageThread from "@/components/messages/MessageThread";
 import EmptyConversation from "@/components/messages/EmptyConversation";
 
+import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { Home, MessageCircle, Search } from "lucide-react";
+import { useNavigate } from "react-router";
+
 /**
- * Trang Messages — giao diện chat với Supabase Realtime.
+ * MessagesPage — giao diện chat 1-1 kiểu Messenger.
  *
- * Cấu trúc:
- * ┌─────────────────────┬────────────────────────┐
- * │ ConversationList     │ MessageThread           │
- * │  ├ Header + Search   │  ├ Thread Header        │
- * │  ├ NewChatPanel      │  ├ Messages (auto-scroll)│
- * │  └ Conversation Items│  └ MessageInput         │
- * └─────────────────────┴────────────────────────┘
+ * Layout:
+ * ┌─────────────┬──────────────────────────────┐
+ * │ Left sidebar│ ConversationList              │ MessageThread   │
+ * │ (Sidebar)   │ (320px fixed)                │ (flex-1)        │
+ * └─────────────┴──────────────────────────────┘
  *
- * Data fetching (TanStack Query):
- * - useConversations() → danh sách conversations
- * - useMessages(id) → messages của conversation đang active
- * - useAllUsers() → danh sách users (cho new chat)
- * - useUserLookup() → lookup table user_id → username
- *
- * Realtime (Supabase):
- * - useRealtimeMessages(id) → subscribe messages INSERT cho conversation đang active
- * - useRealtimeConversations() → subscribe messages + conversation_participants INSERT
- *   để tự động cập nhật conversation list
+ * Mobile: ConversationList HOẶC MessageThread (toggle bằng back button)
  */
 const MessagesPage = () => {
-  // Auth state
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
 
-  // Server state — TanStack Query
+  // Data
   const { data: usersData = [] } = useAllUsers();
   const { data: conversations = [] } = useConversations();
   const sendMessageMutation = useSendMessage();
   const createConversationMutation = useCreateConversation();
 
-  // UI state
+  // UI State
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
@@ -66,20 +57,16 @@ const MessagesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewChat, setShowNewChat] = useState(false);
 
-  // Messages cho conversation đang active
+  // Messages của conversation active
   const { data: messages = [], isLoading: loading } =
     useMessages(activeConversationId);
-
-  // Build user lookup table
   const userLookup = useUserLookup();
 
-  // ━━━ Realtime Subscriptions ━━━
-  // Subscribe tin nhắn mới cho conversation đang active → auto-append vào cache
+  // Realtime
   useRealtimeMessages(activeConversationId);
-  // Subscribe conversation list → auto-refresh khi có conversation/message mới
   useRealtimeConversations();
 
-  /** Gửi tin nhắn — dùng mutation, clear input ngay lập tức */
+  /** Gửi tin nhắn */
   const handleSendMessage = async () => {
     const trimmed = messageInput.trim();
     if (!trimmed || !activeConversationId) return;
@@ -90,7 +77,7 @@ const MessagesPage = () => {
     });
   };
 
-  /** Tạo conversation mới và chuyển sang conversation đó */
+  /** Tạo / mở conversation với user */
   const handleStartConversation = async (targetUserId: string) => {
     try {
       const convId = await createConversationMutation.mutateAsync([
@@ -99,11 +86,11 @@ const MessagesPage = () => {
       setActiveConversationId(convId);
       setShowNewChat(false);
     } catch (err) {
-      console.log("Failed to create conversation", err);
+      console.error("Failed to start conversation", err);
     }
   };
 
-  // Lọc users cho new chat — loại bỏ current user, filter theo search query
+  // Filter users (loại current user + filter theo search)
   const filteredUsers = useMemo(() => {
     if (!user) return [];
     return usersData
@@ -115,26 +102,20 @@ const MessagesPage = () => {
       );
   }, [usersData, user, searchQuery]);
 
-  /**
-   * Tính participantName + participantAvatar cho conversation đang active.
-   * Dùng participants data nếu có, fallback dùng userLookup.
-   */
+  // Tên + avatar của participant trong conversation đang active
   const activeParticipant = useMemo(() => {
-    if (!activeConversationId || !user) return { name: "Conversation", avatar: undefined };
+    if (!activeConversationId || !user)
+      return { name: "Conversation", avatar: undefined };
 
-    const activeConv = conversations.find(
+    const conv = conversations.find(
       (c) => c.conversation_id === activeConversationId,
     );
-
-    // Ưu tiên dùng participants từ Conversation type
-    if (activeConv?.participants) {
-      const other = activeConv.participants.find(
-        (p) => p.user_id !== user.user_id,
-      );
+    if (conv?.participants) {
+      const other = conv.participants.find((p) => p.user_id !== user.user_id);
       if (other) return { name: other.username, avatar: other.avatar };
     }
 
-    // Fallback: tìm participant khác qua messages
+    // Fallback từ messages
     const otherMsg = messages.find((m) => m.sender_id !== user.user_id);
     if (otherMsg) {
       const lookup = userLookup[otherMsg.sender_id];
@@ -146,72 +127,76 @@ const MessagesPage = () => {
 
   if (!user) return <div className="min-h-screen bg-gradient-blue" />;
 
-  // Right sidebar — online friends (placeholder)
-  const rightSidebar = (
-    <Card className="glass-card border-0 rounded-2xl py-0">
-      <CardHeader className="p-5 pb-0">
-        <CardTitle className="font-bold text-[15px] flex items-center gap-2">
-          <Users className="w-4 h-4 text-[#63d4f7]" />
-          Online Friends
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-5 pt-4">
-        <p className="text-sm text-gray-500">No friends online right now</p>
-      </CardContent>
-    </Card>
-  );
+  const navItems = [
+    { icon: Home, label: "Home", path: "/", active: false },
+    { icon: Search, label: "Search", path: "/search", active: false },
+    { icon: MessageCircle, label: "Messages", path: "/messages", active: true },
+  ];
 
   return (
-    <PageLayout
-      username={user.username}
-      activePath="/messages"
-      rightSidebar={rightSidebar}
-    >
-      <div className="flex h-[calc(100vh-3.5rem-4rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden">
-        {/* Sidebar trái — danh sách conversations */}
-        <ConversationList
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={setActiveConversationId}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          showNewChat={showNewChat}
-          onToggleNewChat={() => setShowNewChat(!showNewChat)}
-          newChatPanel={
-            <NewChatPanel
-              users={filteredUsers}
-              onStartConversation={(id) => void handleStartConversation(id)}
-            />
-          }
-          userLookup={userLookup}
-          currentUserId={user.user_id}
-        />
+    <div className="min-h-screen bg-gradient-blue dark text-white font-[Inter,system-ui,sans-serif] flex flex-col">
+      {/* Global Header */}
+      <Header username={user.username} />
 
-        {/* Panel phải — thread chat hoặc empty state */}
-        <div
-          className={`flex-1 flex flex-col ${
-            activeConversationId ? "flex" : "hidden md:flex"
-          }`}
-        >
-          {activeConversationId ? (
-            <MessageThread
-              messages={messages}
-              loading={loading}
-              currentUser={user}
-              userLookup={userLookup}
-              messageInput={messageInput}
-              onMessageInputChange={setMessageInput}
-              onSendMessage={() => void handleSendMessage()}
-              onBack={() => setActiveConversationId(null)}
-              participantName={activeParticipant.name}
-              participantAvatar={activeParticipant.avatar}
-            />
-          ) : (
-            <EmptyConversation onStartNewChat={() => setShowNewChat(true)} />
-          )}
-        </div>
+      {/* Body: Sidebar + ConversationList + MessageThread */}
+      <div className="flex flex-1 max-w-7xl mx-auto w-full min-h-0">
+        {/* Left Nav Sidebar */}
+        <Sidebar navItems={navItems} onNewPost={() => navigate("/")} />
+
+        {/* Chat Area — full height, trừ bottom nav trên mobile */}
+        <main className="flex flex-1 min-w-0 border-x border-white/4 overflow-hidden h-[calc(100vh-3.5rem-4rem)] lg:h-[calc(100vh-3.5rem)]">
+          {/* Conversation List */}
+          <ConversationList
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelectConversation={setActiveConversationId}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            showNewChat={showNewChat}
+            onToggleNewChat={() => setShowNewChat(!showNewChat)}
+            newChatPanel={
+              <NewChatPanel
+                users={filteredUsers}
+                onStartConversation={(id) => void handleStartConversation(id)}
+              />
+            }
+            userLookup={userLookup}
+            currentUserId={user.user_id}
+          />
+
+          {/* Thread Panel */}
+          <div
+            className={`flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden ${
+              activeConversationId ? "flex" : "hidden md:flex"
+            }`}
+          >
+            {activeConversationId ? (
+              <MessageThread
+                messages={messages}
+                loading={loading}
+                currentUser={user}
+                userLookup={userLookup}
+                messageInput={messageInput}
+                onMessageInputChange={setMessageInput}
+                onSendMessage={() => void handleSendMessage()}
+                onBack={() => setActiveConversationId(null)}
+                participantName={activeParticipant.name}
+                participantAvatar={activeParticipant.avatar}
+              />
+            ) : (
+              <EmptyConversation onStartNewChat={() => setShowNewChat(true)} />
+            )}
+          </div>
+        </main>
       </div>
-    </PageLayout>
+
+      {/* Mobile Bottom Nav */}
+      <MobileBottomNav
+        activePath="/messages"
+        onOpenComposer={() => navigate("/")}
+      />
+      <div className="lg:hidden h-16" />
+    </div>
   );
 };
 

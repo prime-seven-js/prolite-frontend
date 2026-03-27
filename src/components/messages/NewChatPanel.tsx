@@ -3,36 +3,38 @@ import type { NewChatPanelProps } from "@/types/messagespage";
 
 /**
  * NewChatPanel — danh sách users có thể bắt đầu chat mới.
- * Hiển thị khi user bấm nút "New" trên header.
  */
 const NewChatPanel = ({ users, onStartConversation }: NewChatPanelProps) => {
   return (
-    <div className="border-b border-white/6 px-2 py-2 max-h-60 overflow-y-auto no-scrollbar">
-      <p className="text-xs text-gray-500 px-2 pb-2">
-        Start a conversation with:
+    <div className="border-b border-white/6 bg-black/10 px-3 py-2 max-h-56 overflow-y-auto no-scrollbar">
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-1 pb-2">
+        Start a conversation
       </p>
 
-      {users.map((u) => (
-        <button
-          key={u.user_id}
-          onClick={() => onStartConversation(u.user_id)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
-        >
-          <InitialAvatar
-            name={u.username}
-            avatarUrl={u.avatar}
-            sizeClassName="w-8 h-8"
-            textClassName="text-xs"
-          />
-          <span className="text-sm font-medium">{u.username}</span>
-        </button>
-      ))}
-
-      {/* Empty state */}
-      {users.length === 0 && (
-        <p className="text-xs text-gray-600 px-2 py-4 text-center">
+      {users.length === 0 ? (
+        <p className="text-xs text-gray-600 px-1 py-3 text-center">
           No users found
         </p>
+      ) : (
+        users.map((u) => (
+          <button
+            key={u.user_id}
+            onClick={() => onStartConversation(u.user_id)}
+            className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/6 transition-colors text-left"
+          >
+            <InitialAvatar
+              name={u.username}
+              avatarUrl={u.avatar}
+              sizeClassName="w-9 h-9"
+              textClassName="text-xs"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-200 truncate">
+                {u.username}
+              </p>
+            </div>
+          </button>
+        ))
       )}
     </div>
   );

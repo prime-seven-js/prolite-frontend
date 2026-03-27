@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { useParams } from "react-router";
 import { Edit3, UserPlus, Check, Camera, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,12 @@ import { InitialAvatar } from "@/components/layout/InitialAvatar";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { formatToVNDate } from "@/lib/converttime";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useAllPosts } from "@/hooks/useAllPosts";
-import { useUserFriends, useSendFriendRequest, useSentFriendRequests } from "@/hooks/useFriends";
+import { useUserPosts } from "@/hooks/useUserPosts";
+import {
+  useUserFriends,
+  useSendFriendRequest,
+  useSentFriendRequests,
+} from "@/hooks/useFriends";
 import { useUpdateProfile } from "@/hooks/useUpdateProfile";
 import ProfilePostCard from "@/components/profile/ProfilePostCard";
 import { toast } from "sonner";
@@ -35,12 +39,7 @@ const ProfilePage = () => {
 
   // Server state — TanStack Query
   const { data: userData, isLoading: profileLoading } = useUserProfile(userId);
-  const { data: postsInfiniteData } = useAllPosts();
-  // Flatten infinite query pages thành flat array
-  const postsData = useMemo(
-    () => postsInfiniteData?.pages.flatMap((page) => page) ?? [],
-    [postsInfiniteData],
-  );
+  const { data: postsData = [] } = useUserPosts(userId ?? "");
   const { data: userFriendData = [] } = useUserFriends();
   const { data: sentRequests = [] } = useSentFriendRequests();
   const sendFriendRequestMutation = useSendFriendRequest();
@@ -71,13 +70,8 @@ const ProfilePage = () => {
 
   if (!userData) return <></>;
 
-  // Filter posts của user đang xem profile
-  const filteredPosts = postsData.filter((post) => post.user_id === userId);
-
   const isOwnProfile = userId === user.user_id;
-  const isFriend = userFriendData.some(
-    (friend) => friend.user_id === userId,
-  );
+  const isFriend = userFriendData.some((friend) => friend.user_id === userId);
   const hasSentRequest = sentRequests.some(
     (req) => req.users.user_id === userId,
   );
@@ -294,8 +288,8 @@ const ProfilePage = () => {
               Created at {formatToVNDate(userData.createdAt || "")}
             </span>
             {/* Nút Add Friend / Your Friend / Pending — chỉ hiển thị khi xem profile người khác */}
-            {!isOwnProfile && (
-              isFriend ? (
+            {!isOwnProfile &&
+              (isFriend ? (
                 <Button
                   size="sm"
                   disabled
@@ -322,10 +316,11 @@ const ProfilePage = () => {
                   className="rounded-full text-xs font-semibold btn-gradient gap-1.5 hover:cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  {sendFriendRequestMutation.isPending ? "Sending..." : "Add Friend"}
+                  {sendFriendRequestMutation.isPending
+                    ? "Sending..."
+                    : "Add Friend"}
                 </Button>
-              )
-            )}
+              ))}
           </div>
         </div>
       </div>
@@ -337,13 +332,13 @@ const ProfilePage = () => {
         <div
           className={`flex-1 text-center h-auto py-3 text-sm font-medium rounded-none border-b-2 transition-all text-[#63d4f7] border-[#2496d4]`}
         >
-          Posts ({filteredPosts.length})
+          Posts ({postsData.length})
         </div>
       </div>
 
       {/* ── Tab Content: danh sách posts của user ── */}
       <div className="no-scrollbar">
-        {filteredPosts.length === 0 ? (
+        {postsData.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
             <p className="text-lg font-medium mb-1">No posts yet.</p>
             <p className="text-sm">
@@ -351,7 +346,7 @@ const ProfilePage = () => {
             </p>
           </div>
         ) : (
-          filteredPosts.map((post, i) => (
+          postsData.map((post, i) => (
             <ProfilePostCard key={post.post_id} post={post} index={i} />
           ))
         )}

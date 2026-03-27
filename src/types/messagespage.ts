@@ -52,8 +52,11 @@ export interface MessageThreadProps {
 export interface MessageBubbleProps {
   message: Message;
   isMine: boolean;
-  senderName: string;
+  senderName?: string;
   senderAvatar?: string;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
+  showTimestamp?: boolean;
 }
 
 /** Props cho MessageInput — ô nhập + gửi tin nhắn */

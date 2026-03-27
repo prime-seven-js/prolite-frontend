@@ -16,15 +16,13 @@ export function useRealtimeMessages(conversationId: string | null) {
 
   useRealtimeSubscription<Message>({
     channelName: `messages-${conversationId ?? "none"}`,
-    table: "messages",
-    event: "INSERT",
-    filter: conversationId
-      ? `conversation_id=eq.${conversationId}`
-      : undefined,
+    isBroadcast: true,
+    broadcastEvent: "NEW_MESSAGE",
     enabled: !!conversationId,
     onReceive: (payload) => {
-      if (payload.eventType === "INSERT" && conversationId) {
-        const newMessage = payload.new as Message;
+      // payload từ broadcast channel có cấu trúc: { type: "broadcast", event: "NEW_MESSAGE", payload: { ... } }
+      if (conversationId && payload.payload) {
+        const newMessage = payload.payload as Message;
         // Append message mới vào cuối danh sách cache
         queryClient.setQueryData<Message[]>(
           queryKeys.conversations.messages(conversationId),

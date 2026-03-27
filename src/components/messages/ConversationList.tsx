@@ -6,8 +6,7 @@ import type { ConversationListProps } from "@/types/messagespage";
 
 /**
  * ConversationList — sidebar trái chứa danh sách conversations.
- * Compose: ConversationListHeader + NewChatPanel (inject via prop) + conversation items.
- * Hiển thị tên + avatar participant thay vì "Conversation" chung.
+ * Hiển thị participant name/avatar, last message preview, thời gian.
  */
 const ConversationList = ({
   conversations,
@@ -18,28 +17,17 @@ const ConversationList = ({
   showNewChat,
   onToggleNewChat,
   newChatPanel,
-  userLookup: _userLookup,
   currentUserId,
 }: ConversationListProps) => {
-  /**
-   * Resolve tên + avatar của participant còn lại trong conversation 1-1.
-   * Nếu có data participants từ API → dùng trực tiếp.
-   * Nếu không → fallback dùng userLookup.
-   */
+  /** Lấy participant còn lại (không phải current user) */
   const getOtherParticipant = (conv: (typeof conversations)[0]) => {
-    // Ưu tiên dùng participants từ Conversation type
-    if (conv.participants && conv.participants.length > 0) {
-      const other = conv.participants.find((p) => p.user_id !== currentUserId);
-      if (other) {
-        return { name: other.username, avatar: other.avatar };
-      }
-    }
-    // Fallback: không có participant data
+    const other = conv.participants?.find((p) => p.user_id !== currentUserId);
+    if (other) return { name: other.username, avatar: other.avatar };
     return { name: "Conversation", avatar: undefined };
   };
 
-  /** Filter conversations theo search query (so khớp tên participant) */
-  const filteredConversations = searchQuery.trim()
+  /** Filter theo search query */
+  const filtered = searchQuery.trim()
     ? conversations.filter((conv) => {
         const { name } = getOtherParticipant(conv);
         return name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -48,7 +36,7 @@ const ConversationList = ({
 
   return (
     <div
-      className={`w-full md:w-80 md:shrink-0 border-r border-white/4 flex flex-col ${
+      className={`w-full md:w-[300px] lg:w-[320px] shrink-0 border-r border-white/5 flex flex-col overflow-hidden ${
         activeConversationId ? "hidden md:flex" : "flex"
       }`}
     >
@@ -64,74 +52,74 @@ const ConversationList = ({
       {showNewChat && newChatPanel}
 
       {/* Conversation Items */}
-      <div className="flex-1 overflow-y-auto no-scrollbar">
-        {filteredConversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <MessageCircle className="w-12 h-12 mb-4 opacity-30" />
-            <p className="text-sm font-medium mb-1">
-              {searchQuery ? "No matching conversations" : "No conversations yet"}
-            </p>
-            <p className="text-xs">
+      <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-gray-500">
+            <MessageCircle className="w-10 h-10 mb-3 opacity-20" />
+            <p className="text-sm font-medium text-gray-400">
               {searchQuery
-                ? "Try a different search"
-                : "Start a new conversation above"}
+                ? "Không tìm thấy cuộc trò chuyện"
+                : "Chưa có cuộc trò chuyện nào"}
             </p>
+            {!searchQuery && (
+              <p className="text-xs mt-1 text-gray-600">
+                Click the icon above to start chatting
+              </p>
+            )}
           </div>
         ) : (
-          filteredConversations.map((conv) => {
+          filtered.map((conv) => {
             const isActive = activeConversationId === conv.conversation_id;
             const { name, avatar } = getOtherParticipant(conv);
-
-            // Last message preview
             const lastMsg = conv.last_message;
-            const lastMsgPreview = lastMsg
+            const preview = lastMsg
               ? lastMsg.sender_id === currentUserId
-                ? `You: ${lastMsg.content}`
+                ? `Bạn: ${lastMsg.content}`
                 : lastMsg.content
               : null;
-            const lastMsgTime = lastMsg?.created_at;
+            const lastTime =
+              lastMsg?.created_at ?? conv.conversations?.created_at;
 
             return (
               <button
                 key={conv.conversation_id}
                 onClick={() => onSelectConversation(conv.conversation_id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-white/4 transition-colors text-left ${
-                  isActive ? "bg-[#2496d4]/8" : "hover:bg-white/3"
+                className={`w-[calc(100%-12px)] mx-1.5 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${
+                  isActive ? "bg-[#2496d4]/12 shadow-sm" : "hover:bg-white/5"
                 }`}
               >
-                {/* Avatar participant */}
-                <InitialAvatar
-                  name={name}
-                  avatarUrl={avatar}
-                  sizeClassName="w-10 h-10"
-                  textClassName="text-sm"
-                />
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  <InitialAvatar
+                    name={name}
+                    avatarUrl={avatar}
+                    sizeClassName="w-12 h-12"
+                    textClassName="text-sm"
+                  />
+                  {/* Online dot placeholder */}
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111827]" />
+                </div>
 
-                {/* Tên + last message preview */}
+                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold truncate">{name}</p>
-                    {lastMsgTime && (
-                      <span className="text-[10px] text-gray-600 shrink-0">
-                        {timeAgo(lastMsgTime)}
+                  <div className="flex items-baseline justify-between gap-1">
+                    <p
+                      className={`text-[14px] truncate font-semibold ${isActive ? "text-[#63d4f7]" : "text-gray-100"}`}
+                    >
+                      {name}
+                    </p>
+                    {lastTime && (
+                      <span className="text-[11px] text-gray-500 shrink-0">
+                        {timeAgo(lastTime)}
                       </span>
                     )}
                   </div>
-                  {lastMsgPreview ? (
-                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                      {lastMsgPreview}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      {timeAgo(conv.conversations?.created_at ?? "")}
-                    </p>
-                  )}
+                  <p
+                    className={`text-[12px] truncate mt-0.5 ${isActive ? "text-[#63d4f7]/70" : "text-gray-500"}`}
+                  >
+                    {preview ?? "Start the conversation"}
+                  </p>
                 </div>
-
-                {/* Active indicator */}
-                {isActive && (
-                  <span className="w-2 h-2 rounded-full bg-[#2496d4] shrink-0" />
-                )}
               </button>
             );
           })

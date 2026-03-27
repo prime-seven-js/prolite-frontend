@@ -4,22 +4,15 @@ import { queryKeys } from "@/lib/queryKeys";
 
 /**
  * Realtime subscription cho bảng conversations + messages.
- *
- * Khi có conversation mới hoặc message mới (ở bất kỳ conversation nào):
- * - Invalidate danh sách conversations để cập nhật UI
- * - ConversationList sẽ tự re-render với data mới nhất
- *
- * Dùng kết hợp với useRealtimeMessages (subscribe message chi tiết cho
- * conversation đang active).
+ * Subscribe INSERT của messages và conversation_members để cập nhật UI.
  */
 export function useRealtimeConversations() {
   const queryClient = useQueryClient();
-
-  // Subscribe INSERT trên bảng messages — cập nhật lastMessage trên ConversationList
+  // Subscribe broadcast "NEW_MESSAGE" (khi có tin nhắn mới trong bất kỳ conversation nào)
   useRealtimeSubscription({
-    channelName: "conversations-messages-realtime",
-    table: "messages",
-    event: "INSERT",
+    channelName: "conversations-realtime",
+    isBroadcast: true,
+    broadcastEvent: "NEW_MESSAGE",
     onReceive: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.conversations.all,
@@ -27,11 +20,11 @@ export function useRealtimeConversations() {
     },
   });
 
-  // Subscribe INSERT trên bảng conversation_participants — conversation mới
+  // Subscribe broadcast "NEW_CONVERSATION" (khi có conversation mới được tạo)
   useRealtimeSubscription({
-    channelName: "conversations-participants-realtime",
-    table: "conversation_participants",
-    event: "INSERT",
+    channelName: "conversations-realtime",
+    isBroadcast: true,
+    broadcastEvent: "NEW_CONVERSATION",
     onReceive: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.conversations.all,

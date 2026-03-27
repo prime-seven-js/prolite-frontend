@@ -12,6 +12,7 @@ export const queryKeys = {
   /** Posts: danh sách, likes, comments */
   posts: {
     all: ["posts"] as const,
+    byUser: (userId: string) => ["posts", "user", userId] as const,
     likes: (postId: string) => ["posts", postId, "likes"] as const,
     comments: (postId: string) => ["posts", postId, "comments"] as const,
   },

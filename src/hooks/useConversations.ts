@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { messageService } from "@/services/messageService";
 import { queryKeys } from "@/lib/queryKeys";
-import type { Message } from "@/types/message";
 
 /**
  * Hook fetch danh sách conversations.
+ * Backend trả về enriched data: participants[] + last_message.
  */
 export function useConversations() {
   return useQuery({
@@ -15,20 +15,17 @@ export function useConversations() {
 
 /**
  * Hook fetch messages theo conversationId.
- * Chỉ fetch khi conversationId khác null (enabled option).
  */
 export function useMessages(conversationId: string | null) {
   return useQuery({
     queryKey: queryKeys.conversations.messages(conversationId ?? ""),
     queryFn: () => messageService.fetchMessages(conversationId!),
-    // Chỉ enable khi có conversationId, tránh fetch với id rỗng
     enabled: !!conversationId,
   });
 }
 
 /**
- * Mutation gửi tin nhắn mới.
- * Optimistic update: thêm message vào cache ngay lập tức.
+ * Mutation gửi tin nhắn — optimistic update vào cache.
  */
 export function useSendMessage() {
   const queryClient = useQueryClient();
@@ -41,20 +38,21 @@ export function useSendMessage() {
       conversationId: string;
       content: string;
     }) => messageService.sendMessage(conversationId, content),
-    onSuccess: (newMessage, { conversationId }) => {
-      // Append message mới vào cache thay vì refetch toàn bộ
-      queryClient.setQueryData<Message[]>(
-        queryKeys.conversations.messages(conversationId),
-        (old) => (old ? [...old, newMessage] : [newMessage]),
-      );
+    onSuccess: (_newMessage, { conversationId }) => {
+      // Invalidate để refetch (hoặc chờ realtime broadcast append) thay vì tự append (tránh duplicate)
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations.messages(conversationId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations.all,
+      });
     },
   });
 }
 
 /**
  * Mutation tạo conversation mới.
- * Sau khi thành công, invalidate danh sách conversations để refetch.
- * Trả về conversationId để caller có thể navigate đến conversation mới.
+ * Backend tự check duplicate — trả về conversation_id cũ nếu đã tồn tại.
  */
 export function useCreateConversation() {
   const queryClient = useQueryClient();

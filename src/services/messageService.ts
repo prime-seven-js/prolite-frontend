@@ -1,18 +1,35 @@
 import api from "@/lib/axios";
+import { aiService } from "./aiService";
 import type { Conversation, Message } from "@/types/message";
+
+/** Raw shape từ backend cũ GET /protected/conversations */
+interface RawConversation {
+  conversation_id: string;
+  conversations: {
+    is_group: boolean;
+    created_at: string;
+  };
+  /** Có thể có nếu backend mới trả về */
+  participants?: { user_id: string; username: string; avatar?: string }[];
+  last_message?: { content: string; sender_id: string; created_at: string } | null;
+}
 
 /**
  * Message Service — xử lý conversations và messages.
- * Gồm: fetch/create conversations, fetch/send messages, mark read.
  */
 export const messageService = {
-  /** Fetch danh sách conversations của user hiện tại */
+  /** Fetch danh sách conversations */
   fetchConversations: async (): Promise<Conversation[]> => {
-    const res = await api.get<Conversation[]>("/protected/conversations");
-    return res.data;
+    const res = await api.get<RawConversation[]>("/protected/conversations");
+    // Normalize: đảm bảo participants luôn là array
+    return res.data.map((raw) => ({
+      ...raw,
+      participants: raw.participants ?? [],
+      last_message: raw.last_message ?? null,
+    }));
   },
 
-  /** Tạo conversation mới với danh sách participants */
+  /** Tạo conversation mới */
   createConversation: async (participantIds: string[], isGroup = false) => {
     const res = await api.post("/protected/conversations", {
       participantIds,
@@ -29,14 +46,18 @@ export const messageService = {
     return res.data;
   },
 
-  /** Gửi tin nhắn mới vào conversation */
+  /** Gửi tin nhắn mới vào conversation (tự động rewrite bằng AI) */
   sendMessage: async (
     conversationId: string,
     content: string,
   ): Promise<Message> => {
+    // 1. Rewrite content bằng AI
+    const aiContent = (await aiService.rewriteWithAI(content)).data;
+    
+    // 2. Gửi message đã được AI sửa
     const res = await api.post<Message>(
       `/protected/conversations/${conversationId}/messages`,
-      { content },
+      { content: aiContent },
     );
     return res.data;
   },

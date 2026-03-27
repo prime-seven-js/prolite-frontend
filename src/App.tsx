@@ -13,6 +13,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import EmailConfirmedPage from "./pages/EmailConfirmedPage";
 import DonatePage from "./pages/DonatePage";
+import MessagesPage from "./pages/MessagesPage";
 
 /**
  * App — root component với React Router.
@@ -63,7 +64,7 @@ function App() {
             <Route path="/" element={<NewFeedsPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/messages" element={<DonatePage />} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
           </Route>
           {/* Public */}
